@@ -7,63 +7,76 @@ and edges of a street digraph and converts it into a digraph instance.
 If the optional argument digraph-file is supplied, reads that, otherwise
 takes input from stdin
 """
+import sys
+import pdb
+
+# throw away executable name before processing command line arguments
+argv = sys.argv[1:]
+
+# if filename is supplied, use that, otherwise use stdin
+if argv:
+    digraph_file_name = argv.pop(0)
+    digraph_file = open(digraph_file_name, 'r')
+else:
+    digraph_file = sys.stdin
+
 # For testing, just use a simple representation of set of vertices, set of
 # edges as ordered pairs, and dctionaries that map
 #   vertex to (lat,long)
 #   edge to street name
 
-def readgraph(filename):
-    digraph_file = open(filename, 'r')
+V = set()
+E = set()
+V_coord = { }
+E_name = { }
+pdb.set_trace()
+# process each line in the file
+for line in digraph_file:
 
-    V = set()
-    E = set()
-    V_coord = {}
-    E_name = {}
+    # strip all trailing whitespace
+    line = line.rstrip()
 
-    # process each line in the file
-    for line in digraph_file:
+    fields = line.split(",")
+    type = fields[0]
 
-        # strip all trailing whitespace
-        line = line.rstrip()
+    if type == 'V':
+        # got a vertex record
+        (id,lat,long) = fields[1:]
 
-        fields = line.split(",")
-        type = fields[0]
+        # vertex id's should be ints
+        id=int(id)
 
-        if type == 'V':
-            # got a vertex record
-            (i,lat,lng) = fields[1:]
+        # lat and long are floats
+        lat=float(lat)
+        long=float(long)
 
-            # vertex id's should be ints
-            i=int(i)
+        V.add(id)
+        V_coord[id] = (lat,long)
+        
+    elif type == 'E':
+        # got an edge record
+        (start,stop,name) = fields[1:]
 
-            # lat and long are floats
-            lat=float(lat)
-            lng=float(lng)
+        # vertices are ints
+        start=int(start)
+        stop=int(stop)
+        e = (start,stop)
 
-            V.add(i)
-            V_coord[i] = (lat,lng)
+        # get rid of leading and trailing quote " chars around name
+        name = name.strip('"')
 
-        elif type == 'E':
-            # got an edge record
-            (start,stop,name) = fields[1:]
+        # consistency check, we don't want auto adding of vertices when
+        # adding an edge.
+        if start not in V or stop not in V:
+            raise Exception("Edge {} has an endpoint that is not a vertex".format(e) )
 
-            # vertices are ints
-            start=int(start)
-            stop=int(stop)
-            e = (start,stop)
+        E.add(e)
+        E_name[e] = name
+    else:
+        # weird input
+        raise Exception("Error: weird line |{}|".format(line))
 
-            # get rid of leading and trailing quote " chars around name
-            name = name.strip('"')
-
-            # consistency check, we don't want auto adding of vertices when
-            # adding an edge.
-            if start not in V or stop not in V:
-                raise Exception("Edge {} has an endpoint that is not a vertex".format(e) )
-
-            E.add(e)
-            E_name[e] = name
-        else:
-            # weird input
-            raise Exception("Error: weird line |{}|".format(line))
-
-    return (V, E, V_coord, E_name)
+if True:
+    print(V_coord)
+    print()
+    print(E_name)
