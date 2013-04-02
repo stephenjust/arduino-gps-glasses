@@ -1,5 +1,8 @@
 *.py[cod]
 
+build-cli
+*~
+
 # C extensions
 *.so
 
