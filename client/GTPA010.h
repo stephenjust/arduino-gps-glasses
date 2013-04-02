@@ -1,7 +1,8 @@
 #ifndef _GTPA010_H_
 #define _GTPA010_H_
 
-#include "../Sensors.h"
+#include "Sensors.h"
+#include "TinyGPS.h"
 
 typedef struct gpsData
 {

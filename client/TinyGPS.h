@@ -150,4 +150,6 @@ private:
 #undef round 
 #endif
 
+extern TinyGPS gps;
+
 #endif

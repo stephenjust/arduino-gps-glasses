@@ -1,7 +1,14 @@
 #include <Arduino.h>
+#include <Wire.h>
 #include <Adafruit_ST7735.h> 
 #include <SD.h>
 #include <mem_syms.h>
+
+#include "TimerThree.h"
+#include "Sensors.h"
+#include "Config.h"
+#include "TinyGPS.h"
+#include "GTPA010.h"
 
 #include "map.h"
 #include "path.h"
@@ -10,6 +17,8 @@
 // #define DEBUG_SCROLLING
 // #define DEBUG_PATH
 // #define DEBUG_MEMORY
+
+TinyGPS gps;
 
 // Pins and interrupt lines for the zoom in and out buttons.
 const uint8_t zoom_in_interrupt = 1;     // Digital pin 3.
@@ -58,6 +67,8 @@ void setup() {
     Serial.begin(9600);
     Serial.println("Starting...");
     Serial.flush();    // There can be nasty leftover bits.
+
+    GTPA010::begin();
 
     initialize_screen();
 

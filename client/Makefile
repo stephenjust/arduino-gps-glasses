@@ -19,8 +19,8 @@ BOARD_TAG = mega2560
 # For example:
 #	ARDUINO_LIBS = SPI Adafruit_GFX Adafruit_ST7735 \
 #	   Adafruit_SD Adafruit_SD/utility SD/utility UAUtils_Memory UAUtils_lcd
-ARDUINO_LIBS = UAUtils Adafruit_GFX Adafruit_ST7735 SD SD/utility SPI SD_Images \
-    UAUtils UAUtilsLCD
+ARDUINO_LIBS = UAUtils Wire Adafruit_GFX Adafruit_ST7735 SD SD/utility \
+	SPI SD_Images UAUtilsLCD
 
 # if there is a ARDUINO_UA_ROOT environment variable, it defines the
 # root of the arduino_ua install.  If not, we assume it is $(HOME)
