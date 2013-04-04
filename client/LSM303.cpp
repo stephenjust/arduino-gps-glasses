@@ -51,16 +51,18 @@
 
 /**
  * Initialize the compass module
- *
- * Parameter is the full scale of the module, can be 2, 4, 8
  */
-void LSM303::init(int fs) {
+void LSM303::init() {
   write(0x27, LSM303_CTRL_REG1_A);/* 0x27 = normal power mode,
 					  all accel axes on */
-  if ((fs==8)||(fs==4))
-    write((0x00 | (fs-fs/2-1)<<4), LSM303_CTRL_REG4_A);  // set full-scale
+  //write(0x40, LSM303_CTRL_REG4_A);/* 0x40 = continuous update */
+
+
+  if ((LSM303_SCALE==8)||(LSM303_SCALE==4))
+    write((0x00 | (LSM303_SCALE-LSM303_SCALE/2-1)<<4), LSM303_CTRL_REG4_A);  // set full-scale
   else
     write(0x00, LSM303_CTRL_REG4_A);
+
   write(0x14, LSM303_CRA_REG_M);  // 0x14 = mag 30Hz output rate
   write(0x00, LSM303_MR_REG_M);  // 0x00 = continouous conversion mode
 }
@@ -102,53 +104,67 @@ byte LSM303::read(byte address) {
 }
 
 
-void LSM303::getAccel(int * rawValues) {
-  rawValues[LSM303_Z] = ((int)read(LSM303_OUT_X_L_A) << 8)
+int * LSM303::getAccel() {
+  accel[LSM303_Z] = ((int)read(LSM303_OUT_X_L_A) << 8)
     | (read(LSM303_OUT_X_H_A));
-  rawValues[LSM303_X] = ((int)read(LSM303_OUT_Y_L_A) << 8)
+  accel[LSM303_X] = ((int)read(LSM303_OUT_Y_L_A) << 8)
     | (read(LSM303_OUT_Y_H_A));
-  rawValues[LSM303_Y] = ((int)read(LSM303_OUT_Z_L_A) << 8)
+  accel[LSM303_Y] = ((int)read(LSM303_OUT_Z_L_A) << 8)
     | (read(LSM303_OUT_Z_H_A));  
   // had to swap those to right the data with the proper axis
+
+  return accel;
 }
 
-void LSM303::printValues(int * magArray, int * accelArray) {
-  /* print out mag and accel arrays all pretty-like */
-  Serial.print(accelArray[LSM303_X], DEC);
+/**
+ * Get real acceleration values, in units of g */
+float * LSM303::getRealAccel() {
+  for (int i=0; i<3; i++)
+    realAccel[i] = accel[i] / pow(2, 15) * LSM303_SCALE; 
+  
+  return realAccel;
+}
+
+void LSM303::printValues() {
+  Serial.print("Accel: ");
+  Serial.print(accel[LSM303_X], DEC);
   Serial.print("\t");
-  Serial.print(accelArray[LSM303_Y], DEC);
+  Serial.print(accel[LSM303_Y], DEC);
   Serial.print("\t");
-  Serial.print(accelArray[LSM303_Z], DEC);
+  Serial.print(accel[LSM303_Z], DEC);
   Serial.print("\t\t");
   
-  Serial.print(magArray[LSM303_X], DEC);
+  Serial.print("Mag: ");
+  Serial.print(mag[LSM303_X], DEC);
   Serial.print("\t");
-  Serial.print(magArray[LSM303_Y], DEC);
+  Serial.print(mag[LSM303_Y], DEC);
   Serial.print("\t");
-  Serial.print(magArray[LSM303_Z], DEC);
+  Serial.print(mag[LSM303_Z], DEC);
   Serial.println();
 }
 
-float LSM303::getHeading(int * magValue) {
+int LSM303::getHeading() {
+
   // see section 1.2 in app note AN3192
-  float heading = 180*atan2(magValue[LSM303_Y],
-			    magValue[LSM303_X])/PI; /* assume pitch,
-						       roll are 0 */
+  int heading = 180*atan2(mag[LSM303_Y],
+			    mag[LSM303_X])/PI; /* assume pitch,
+						  roll are 0 */
   
-  if (heading <0)
+  if (heading < 0)
     heading += 360;
   
   return heading;
 }
 
-float LSM303::getTiltHeading(int * magValue, float * accelValue) {
+float LSM303::getTiltHeading() {
+
   // see appendix A in app note AN3192 
-  float pitch = asin(-accelValue[LSM303_X]);
-  float roll = asin(accelValue[LSM303_Y]/cos(pitch));
+  float pitch = asin(-accel[LSM303_X]);
+  float roll = asin(accel[LSM303_Y]/cos(pitch));
   
-  float xh = magValue[LSM303_X] * cos(pitch) + magValue[LSM303_Z] * sin(pitch);
-  float yh = magValue[LSM303_X] * sin(roll) * sin(pitch) + magValue[LSM303_Y] * cos(roll) - magValue[LSM303_Z] * sin(roll) * cos(pitch);
-  float zh = -magValue[LSM303_X] * cos(roll) * sin(pitch) + magValue[LSM303_Y] * sin(roll) + magValue[LSM303_Z] * cos(roll) * cos(pitch);
+  float xh = mag[LSM303_X] * cos(pitch) + mag[LSM303_Z] * sin(pitch);
+  float yh = mag[LSM303_X] * sin(roll) * sin(pitch) + mag[LSM303_Y] * cos(roll) - mag[LSM303_Z] * sin(roll) * cos(pitch);
+  float zh = -mag[LSM303_X] * cos(roll) * sin(pitch) + mag[LSM303_Y] * sin(roll) + mag[LSM303_Z] * cos(roll) * cos(pitch);
 
   float heading = 180 * atan2(yh, xh)/PI;
   if (yh >= 0)
@@ -157,13 +173,24 @@ float LSM303::getTiltHeading(int * magValue, float * accelValue) {
     return (360 + heading);
 }
 
-void LSM303::getMag(int * rawValues) {
+int * LSM303::getMag() {
+  // Read magnetometer value to trigger an update
   Wire.beginTransmission(LSM303_MAG);
   Wire.write(LSM303_OUT_X_H_M);
   Wire.endTransmission();
   Wire.requestFrom(LSM303_MAG, 6);
   for (int i=0; i<3; i++)
-    rawValues[i] = (Wire.read() << 8) | Wire.read();
+    mag[i] = (Wire.read() << 8) | Wire.read();
+
+  // Wait for magnetometer readings to be ready
+  while(!(read(LSM303_SR_REG_M) & 0x01)) {}
+
+  mag[LSM303_X] = ((int)read(LSM303_OUT_X_H_M) << 8)
+    | (read(LSM303_OUT_X_L_M));
+  mag[LSM303_Y] = ((int)read(LSM303_OUT_Y_H_M) << 8)
+    | (read(LSM303_OUT_Y_L_M));
+  mag[LSM303_Z] = ((int)read(LSM303_OUT_Z_H_M) << 8)
+    | (read(LSM303_OUT_Z_L_M));
 }
 
 

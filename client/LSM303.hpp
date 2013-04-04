@@ -54,21 +54,23 @@ class LSM303 {
   float realAccel[3];  // calculated acceleration values here
 
 public:
-  void init(int fs);
+  void init();
 
   void write(byte data, byte address);
 
   byte read(byte address);
 
-  void getAccel(int * rawValues);
+  int * getAccel();
 
-  void getMag(int * rawValues);
+  float * getRealAccel();
 
-  float getHeading(int * magValue);
+  int * getMag();
 
-  float getTiltHeading(int * magValue, float * accelValue);
+  int getHeading();
 
-  void printValues(int * magArray, int * accelArray);
+  float getTiltHeading();
+
+  void printValues();
 
 };
 
