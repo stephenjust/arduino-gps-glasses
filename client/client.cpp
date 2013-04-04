@@ -79,6 +79,14 @@ void setup() {
     compass.enableDefault();
     compass.setMagGain(LSM303::magGain_47);
     Serial.println("Compass initialized!");
+    
+    // wait for the GPS to be ready
+    bool val = 0;
+    while (!val) {
+      // stuffs
+      val = GTPA010::gpsCheck();
+      Serial.println("Loading GPS..");
+    }
 
     compass.read();
     if (!compass.timeoutOccurred()) {
@@ -87,7 +95,6 @@ void setup() {
     } else {
       Serial.println("Timed out!"); 
     }
-
     for (int i = 0; i < 10; i++) {
       compass.read();
       Serial.print(" H: ");
