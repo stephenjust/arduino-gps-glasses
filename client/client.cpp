@@ -66,16 +66,19 @@ extern uint8_t current_map_num;
 uint8_t first_time;
 
 void setup() {
-  Wire.begin();
+  Sensors::Sensors();
     Serial.begin(9600);
     Serial.println("Starting...");
     Serial.flush();    // There can be nasty leftover bits.
 
-    //GTPA010::begin();
+    GTPA010::begin();
+    Serial.println("GPS initialized!");
+    
 
     compass.init();
     compass.enableDefault();
     compass.setMagGain(LSM303::magGain_47);
+    Serial.println("Compass initialized!");
 
     compass.read();
     if (!compass.timeoutOccurred()) {
@@ -85,19 +88,13 @@ void setup() {
       Serial.println("Timed out!"); 
     }
 
-    while (1) {
+    for (int i = 0; i < 10; i++) {
       compass.read();
-      Serial.print("A ");
-      Serial.print("X: ");
-      Serial.print((int)compass.a.x);
-      Serial.print(" Y: ");
-      Serial.print((int)compass.a.y);
-      Serial.print(" Z: ");
-      Serial.print((int)compass.a.z);
-
       Serial.print(" H: ");
       Serial.print(compass.heading());
       Serial.println();
+      GTPA010::readData();
+      GTPA010::printData();
     }
 
     initialize_screen();

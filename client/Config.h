@@ -2,7 +2,7 @@
 #define _CONFIG_H_
 
 // Features
-#define SERIAL_PRINT_ENABLE 0
+#define SERIAL_PRINT_ENABLE 1
 #define DEBUG_INTERFACE 0
 #define DEBUG_SDCARD 0
 
@@ -28,7 +28,7 @@
 #define WHITE   0xFFFF
 
 // GPS Setup
-#define GPS_FIX_PIN 2
+#define GPS_FIX_PIN 11
 #define GPS_ENABLE_PIN 12
 #define GPS_BAUD_RATE 4800
 
