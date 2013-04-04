@@ -9,6 +9,7 @@
 #include "Config.h"
 #include "TinyGPS.h"
 #include "GTPA010.h"
+#include "LSM303.h"
 
 #include "map.h"
 #include "path.h"
@@ -19,6 +20,7 @@
 // #define DEBUG_MEMORY
 
 TinyGPS gps;
+LSM303 compass;
 
 // Pins and interrupt lines for the zoom in and out buttons.
 const uint8_t zoom_in_interrupt = 1;     // Digital pin 3.
@@ -64,11 +66,39 @@ extern uint8_t current_map_num;
 uint8_t first_time;
 
 void setup() {
+  Wire.begin();
     Serial.begin(9600);
     Serial.println("Starting...");
     Serial.flush();    // There can be nasty leftover bits.
 
-    GTPA010::begin();
+    //GTPA010::begin();
+
+    compass.init();
+    compass.enableDefault();
+    compass.setMagGain(LSM303::magGain_47);
+
+    compass.read();
+    if (!compass.timeoutOccurred()) {
+      Serial.print("Compass heading: ");
+      Serial.println(compass.heading());
+    } else {
+      Serial.println("Timed out!"); 
+    }
+
+    while (1) {
+      compass.read();
+      Serial.print("A ");
+      Serial.print("X: ");
+      Serial.print((int)compass.a.x);
+      Serial.print(" Y: ");
+      Serial.print((int)compass.a.y);
+      Serial.print(" Z: ");
+      Serial.print((int)compass.a.z);
+
+      Serial.print(" H: ");
+      Serial.print(compass.heading());
+      Serial.println();
+    }
 
     initialize_screen();
 
