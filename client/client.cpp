@@ -75,7 +75,7 @@ void setup() {
     Serial.println("GPS initialized!");
     
 
-    compass.init();
+    compass.init(LSM303DLH_DEVICE);
     compass.enableDefault();
     compass.setMagGain(LSM303::magGain_47);
     Serial.println("Compass initialized!");
@@ -353,6 +353,8 @@ void loop() {
         // force a redisplay of status message
         clear_status_msg();
     }
+    // Refresh compass display
+    draw_compass();
 
     // always update the status message area if message changes
     // Indicate which point we are waiting for

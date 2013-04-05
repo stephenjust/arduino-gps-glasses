@@ -16,8 +16,8 @@ LSM303::LSM303(void)
 {
   // These are just some values for a particular unit; it is recommended that
   // a calibration be done for your particular unit.
-  m_max.x = +199; m_max.y = +228; m_max.z = 53;
-  m_min.x = -167; m_min.y = -217; m_min.z = -196;
+    m_max.x = +1; m_max.y = +2; m_max.z = 0;
+  m_min.x = -1; m_min.y = -2; m_min.z = -140;
 
   _device = LSM303_DEVICE_AUTO;
   acc_address = ACC_ADDRESS_SA0_A_LOW;
@@ -252,6 +252,17 @@ void LSM303::readMag(void)
   m.x = (int16_t)(xhm << 8 | xlm);
   m.y = (int16_t)(yhm << 8 | ylm);
   m.z = (int16_t)(zhm << 8 | zlm);
+
+  // Update calibration on the fly
+  if (m.x > m_max.x) m_max.x = m.x;
+  if (m.x < m_min.x) m_min.x = m.x;
+
+  if (m.y > m_max.y) m_max.y = m.y;
+  if (m.y < m_min.y) m_min.y = m.y;
+  
+  if (m.z > m_max.z) m_max.z = m.z;
+  if (m.z < m_min.z) m_min.z = m.z;
+  
 }
 
 // Reads all 6 channels of the LSM303 and stores them in the object variables

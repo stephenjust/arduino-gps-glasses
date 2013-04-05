@@ -116,6 +116,9 @@ int compass_x = 20;
 int compass_y = 20;
 int compass_r = 8;
 
+int compass_old = 0;
+int compass_drawn = 0;
+
 // conversion routines between lat and long and map pixel coordinates
 int32_t x_to_longitude(char map_num, int32_t map_x) {
     return map(map_x, 
@@ -193,9 +196,19 @@ uint8_t set_zoom() {
         
 
 void draw_compass() {
-  tft.fillCircle(compass_x, compass_y, compass_r, BLUE);
+
   compass.read();
   int compass_dir = compass.heading();
+
+  // Avoid updating 
+  if (abs(compass_dir - compass_old) < 5 && compass_drawn == 1)
+      return;
+  compass_old = compass_dir;
+  compass_drawn = 1;
+
+  Serial.println(compass_dir);
+
+  tft.fillCircle(compass_x, compass_y, compass_r, BLUE);
 
   int tip_x = compass_x + compass_r * cos(compass_dir*PI/180);
   int tail_x = compass_x - compass_r * cos(compass_dir*PI/180);
@@ -232,7 +245,7 @@ void draw_map_screen() {
                     screen_map_x, screen_map_y,
                     0, 0, 128, 160);
 
-    draw_compass();
+    compass_drawn = 0;
     
 }
 
