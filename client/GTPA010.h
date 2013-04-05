@@ -34,7 +34,7 @@ public:
 	static void begin(); // Begin sensor initilization routines
 	static bool check(); // A validity check for the sensor, if true, its reporting a valid response, if false, then response is invalid
 	
-	static bool gpsCheck(); // A function called by an inturput service to check GPS lock status
+	static void gpsCheck(); // A function called by an inturput service to check GPS lock status
 private:
 	static gpsData data; // Used to store the data in the gpsData struct
 	static bool newData; // A private variable determining if the data has been refreshed
@@ -79,7 +79,7 @@ void GTPA010::begin()
 	Timer3.attachInterrupt(&gpsCheck, timer_ticks);
 }
 
-bool GTPA010::gpsCheck()
+void GTPA010::gpsCheck()
 {
 	bool oldGpsValue = gpsValue; // check the old value for the 2D/3D lock pin
 	
@@ -91,7 +91,6 @@ bool GTPA010::gpsCheck()
 		gpsLock = 0; // Clear the lock variable
 	
 	sensorSecond = !sensorSecond; // Toggle the static sensor class variable for use of other sensors
-	return gpsLock;
 }
 
 void GTPA010::readData()
