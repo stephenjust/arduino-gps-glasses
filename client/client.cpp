@@ -88,15 +88,6 @@ void setup() {
       Serial.println("Timed out!"); 
     }
 
-    for (int i = 0; i < 10; i++) {
-      compass.read();
-      Serial.print(" H: ");
-      Serial.print(compass.heading());
-      Serial.println();
-      GTPA010::readData();
-      GTPA010::printData();
-    }
-
     initialize_screen();
 
     initialize_sd_card();

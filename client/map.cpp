@@ -1,8 +1,10 @@
 #include <Arduino.h>
 #include <Adafruit_GFX.h>        // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library
+#include <math.h>
 #include "lcd_image.h"
 #include "map.h"
+#include "LSM303.h"
 
 // #define DEBUG
 
@@ -27,6 +29,7 @@
 */
 
 extern Adafruit_ST7735 tft;
+extern LSM303 compass;
 
 // the number of the current map being displayed
 uint8_t current_map_num;
@@ -109,7 +112,9 @@ map_box_t map_box[] = {
     },
 };
 
-
+int compass_x = 20;
+int compass_y = 20;
+int compass_r = 8;
 
 // conversion routines between lat and long and map pixel coordinates
 int32_t x_to_longitude(char map_num, int32_t map_x) {
@@ -187,6 +192,29 @@ uint8_t set_zoom() {
     }
         
 
+void draw_compass() {
+  tft.fillCircle(compass_x, compass_y, compass_r, BLUE);
+  compass.read();
+  int compass_dir = compass.heading();
+
+  int tip_x = compass_x + compass_r * cos(compass_dir*PI/180);
+  int tail_x = compass_x - compass_r * cos(compass_dir*PI/180);
+  int tip_y = compass_y + compass_r * sin(compass_dir*PI/180);
+  int tail_y = compass_y - compass_r * sin(compass_dir*PI/180);
+
+  int a1_x = compass_x + (compass_r - 5) * cos((compass_dir-90)*PI/180);
+  int a1_y = compass_y + (compass_r - 5) * sin((compass_dir-90)*PI/180);
+
+  int a2_x = compass_x + (compass_r - 5) * cos((compass_dir+90)*PI/180);
+  int a2_y = compass_y + (compass_r - 5) * sin((compass_dir+90)*PI/180);
+
+  // Arrow body
+  tft.drawLine(tip_x, tip_y, tail_x, tail_y, RED);
+  // Arrow head
+  tft.drawLine(tip_x, tip_y, a1_x, a1_y, RED);
+  tft.drawLine(tip_x, tip_y, a2_x, a2_y, RED);
+}
+
 void draw_map_screen() {
     #ifdef DEBUG
         // Want to display a small message saying that we are redrawing the map!
@@ -203,6 +231,8 @@ void draw_map_screen() {
     lcd_image_draw(&map_tiles[current_map_num], &tft,
                     screen_map_x, screen_map_y,
                     0, 0, 128, 160);
+
+    draw_compass();
     
 }
 
