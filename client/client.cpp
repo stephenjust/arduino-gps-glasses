@@ -66,7 +66,7 @@ extern uint8_t current_map_num;
 uint8_t first_time;
 
 void setup() {
-  Sensors::Sensors();
+    Sensors::Sensors();
     Serial.begin(9600);
     Serial.println("Starting...");
     Serial.flush();    // There can be nasty leftover bits.
@@ -83,17 +83,17 @@ void setup() {
     // wait for the GPS to be ready
     bool val = 0;
     while (!val) {
-      // stuffs
-      val = GTPA010::gpsCheck();
-      Serial.println("Loading GPS..");
+        // stuffs
+        val = GTPA010::gpsCheck();
+        Serial.println("Loading GPS..");
     }
 
     compass.read();
     if (!compass.timeoutOccurred()) {
-      Serial.print("Compass heading: ");
-      Serial.println(compass.heading());
+        Serial.print("Compass heading: ");
+        Serial.println(compass.heading());
     } else {
-      Serial.println("Timed out!"); 
+        Serial.println("Timed out!"); 
     }
 
     initialize_screen();
@@ -106,13 +106,13 @@ void setup() {
 
     // Want to start viewing window in the center of the map
     move_window(
-        (map_box[current_map_num].W + map_box[current_map_num].E) / 2,
-        (map_box[current_map_num].N + map_box[current_map_num].S) / 2);
+                (map_box[current_map_num].W + map_box[current_map_num].E) / 2,
+                (map_box[current_map_num].N + map_box[current_map_num].S) / 2);
 
     // with cursor in the middle of the window
     move_cursor_to(
-        screen_map_x + display_window_width / 2, 
-        screen_map_y + display_window_height / 2);
+                   screen_map_x + display_window_width / 2, 
+                   screen_map_y + display_window_height / 2);
 
     // Draw the initial screen and cursor
     first_time = 1;
@@ -128,10 +128,10 @@ void setup() {
     attachInterrupt(zoom_in_interrupt, handle_zoom_in, FALLING);
     attachInterrupt(zoom_out_interrupt, handle_zoom_out, FALLING);
 
-    #ifdef DEBUG_MEMORY
-        Serial.print("Available mem:");
-        Serial.println(AVAIL_MEM);
-    #endif
+#ifdef DEBUG_MEMORY
+    Serial.print("Available mem:");
+    Serial.println(AVAIL_MEM);
+#endif
 }
 
 const uint16_t screen_scroll_delta = 32;
@@ -159,7 +159,7 @@ void loop() {
     if ( first_time ) {
         first_time = 0;
         update_display_window = 1;
-        }
+    }
 
     // Joystick displacement.
     int16_t dx = 0;
@@ -172,14 +172,14 @@ void loop() {
     
     // if the map changed as a result of a zoom button press
     if (shared_new_map_num != current_map_num) {
-        #ifdef DEBUG_SCROLLING
-            Serial.print("Zoom from ");
-            Serial.print(current_map_num);
-            Serial.print(" x ");
-            Serial.print(cursor_map_x);
-            Serial.print(" y ");
-            Serial.print(cursor_map_y);
-        #endif
+#ifdef DEBUG_SCROLLING
+        Serial.print("Zoom from ");
+        Serial.print(current_map_num);
+        Serial.print(" x ");
+        Serial.print(cursor_map_x);
+        Serial.print(" y ");
+        Serial.print(cursor_map_y);
+#endif
 
         // change the map and figure out the position of the cursor on
         // the new map.
@@ -187,18 +187,18 @@ void loop() {
 
         // center the display window around the cursor 
         move_window_to(
-            cursor_map_x - display_window_width/2, 
-            cursor_map_y - display_window_height/2);
+                       cursor_map_x - display_window_width/2, 
+                       cursor_map_y - display_window_height/2);
 
-        #ifdef DEBUG_SCROLLING
-            Serial.print(" to ");
-            Serial.print(current_map_num);
-            Serial.print(" x ");
-            Serial.print(cursor_map_x);
-            Serial.print(" y ");
-            Serial.print(cursor_map_y);
-            Serial.println();
-        #endif
+#ifdef DEBUG_SCROLLING
+        Serial.print(" to ");
+        Serial.print(current_map_num);
+        Serial.print(" x ");
+        Serial.print(cursor_map_x);
+        Serial.print(" y ");
+        Serial.print(cursor_map_y);
+        Serial.println();
+#endif
 
         // Changed the zoom level, so we want to redraw the window
         update_display_window = 1;
@@ -230,7 +230,7 @@ void loop() {
             if ( cursor_screen_x < screen_left_margin ) {
                 new_screen_map_x = screen_map_x - screen_scroll_delta;
                 need_to_move = 1;
-                }
+            }
             else if ( cursor_screen_x > screen_right_margin ) {
                 new_screen_map_x = screen_map_x + screen_scroll_delta;
                 need_to_move = 1;
@@ -239,7 +239,7 @@ void loop() {
             if ( cursor_screen_y < screen_top_margin ) {
                 new_screen_map_y = screen_map_y - screen_scroll_delta;
                 need_to_move = 1;
-                }
+            }
             else if ( cursor_screen_y > screen_bottom_margin ) {
                 new_screen_map_y = screen_map_y + screen_scroll_delta;
                 need_to_move = 1;
@@ -249,15 +249,15 @@ void loop() {
                 // move the display window, leaving cursor at same lat-lon
                 move_window_to(new_screen_map_x, new_screen_map_y);
                 update_display_window = 1;
-                } 
+            } 
             else {
                 // erase old cursor, move, and draw new one, no need to 
                 // redraw the underlying map tile
                 erase_cursor();
                 move_cursor_by(dx, dy);
                 draw_cursor();
-                }
             }
+        }
 
     }
 
@@ -268,13 +268,13 @@ void loop() {
     // pres again.
     if (select_button_event) {
         // Button was pressed, we are selecting a point!
-        #ifdef DEBUG_PATH
-            Serial.print("x ");
-            Serial.print(cursor_map_x);
-            Serial.print(" y ");
-            Serial.print(cursor_map_y);
-            Serial.println();
-        #endif
+#ifdef DEBUG_PATH
+        Serial.print("x ");
+        Serial.print(cursor_map_x);
+        Serial.print(" y ");
+        Serial.print(cursor_map_y);
+        Serial.println();
+#endif
 
         // which press is this, the start or the stop selection?
 
@@ -289,7 +289,7 @@ void loop() {
             start_lat = cursor_lat;
             start_lon = cursor_lon;
             request_state = 1;
-            }
+        }
         else if ( request_state == 1) {
             // collect the stop point
             stop_lat = cursor_lat;
@@ -309,46 +309,46 @@ void loop() {
             // free any existing path
             if ( path_length > 0 ) {
                 free(path);
-                }
+            }
 
             // read the path from the serial port
             status_msg("WAITING");
             if ( read_path(&path_length, &path) ) {
-                #ifdef DEBUG_PATH
-                    uint8_t is_visible;
-                    for (uint16_t i=0; i < path_length; i++) {
-                        is_visible = is_coord_visible(path[i]);
-                        Serial.print(i);
-                        Serial.print(": ");
-                        Serial.print(path[i].lat);
-                        Serial.print(",");
-                        Serial.print(path[i].lon);
-                        Serial.print(is_visible ? "V": "");
-                        Serial.println();
-                        }
-                #endif
-                update_display_window = 1;
+#ifdef DEBUG_PATH
+                uint8_t is_visible;
+                for (uint16_t i=0; i < path_length; i++) {
+                    is_visible = is_coord_visible(path[i]);
+                    Serial.print(i);
+                    Serial.print(": ");
+                    Serial.print(path[i].lat);
+                    Serial.print(",");
+                    Serial.print(path[i].lon);
+                    Serial.print(is_visible ? "V": "");
+                    Serial.println();
                 }
+#endif
+                update_display_window = 1;
+            }
             else {
                 // should display this error on the screen
                 Serial.print("Path read error, code ");
                 Serial.println(path_errno);
-                }
-
             }
-        } // end of select_button_event processing
+
+        }
+    } // end of select_button_event processing
 
     // do we have to redraw the map tile?  
     if (update_display_window) {
-        #ifdef DEBUG_SCROLLING
-            Serial.println("Screen update");
-            Serial.print(current_map_num);
-            Serial.print(" ");
-            Serial.print(cursor_lon);
-            Serial.print(" ");
-            Serial.print(cursor_lat);
-            Serial.println();
-        #endif
+#ifdef DEBUG_SCROLLING
+        Serial.println("Screen update");
+        Serial.print(current_map_num);
+        Serial.print(" ");
+        Serial.print(cursor_lon);
+        Serial.print(" ");
+        Serial.print(cursor_lat);
+        Serial.println();
+#endif
 
         draw_map_screen();
         draw_cursor();
@@ -356,27 +356,27 @@ void loop() {
         // Need to redraw any other things that are on the screen
         if ( path_length > 0 ) {
             draw_path(path_length, path);
-            }
+        }
 
         // force a redisplay of status message
         clear_status_msg();
-        }
+    }
 
     // always update the status message area if message changes
     // Indicate which point we are waiting for
     if ( request_state == 0 ) {
         status_msg("FROM?");
-        }
+    }
     else {
         status_msg("TO?");
-        }
     }
+}
 
 char* prev_status_msg = 0;
 
 void clear_status_msg() {
     status_msg("");
-    }
+}
 
 void status_msg(char *msg) {
     // messages are strings, so we assume constant, and if they are the
@@ -393,8 +393,8 @@ void status_msg(char *msg) {
         tft.setTextSize(1);
 
         tft.println(msg);
-        }
     }
+}
 
 
 void initialize_screen() {
@@ -411,23 +411,23 @@ void initialize_screen() {
 
 void initialize_sd_card() {
     if (!SD.begin(sd_cs)) {
-        #ifdef DEBUG_SERIAL
-            Serial.println("Initialization has failed. Things to check:");
-            Serial.println("* Is a card inserted?");
-            Serial.println("* Is your wiring correct?");
-            Serial.println("* Is the chipSelect pin the one for your shield or module?");
+#ifdef DEBUG_SERIAL
+        Serial.println("Initialization has failed. Things to check:");
+        Serial.println("* Is a card inserted?");
+        Serial.println("* Is your wiring correct?");
+        Serial.println("* Is the chipSelect pin the one for your shield or module?");
 
-            Serial.println("SD card could not be initialized");
-        #endif
+        Serial.println("SD card could not be initialized");
+#endif
 
         while (1) {};    // Just wait, stuff exploded.
     }
     else {
-        #ifdef DEBUG_SERIAL
+#ifdef DEBUG_SERIAL
 
         Serial.println("Wiring is correct and a card is present.");
 
-        #endif
+#endif
     }
 }
 
@@ -457,14 +457,14 @@ uint32_t button_prev_time = 0;
 uint32_t button_sample_delay = 200;
 
 /*
-Read the joystick position, and return the x, y displacement from the zero
-position.  The joystick has to be at least 4 units away from zero before a
-non-zero displacement is returned.  This filters out the centering errors that
-occur when the joystick is released.
+  Read the joystick position, and return the x, y displacement from the zero
+  position.  The joystick has to be at least 4 units away from zero before a
+  non-zero displacement is returned.  This filters out the centering errors that
+  occur when the joystick is released.
 
-Also, return 1 if the joystick button has been pushed, held for a minimum
-amount of time, and then released.  That is, a 1 is returned if a button
-select action has occurred.  
+  Also, return 1 if the joystick button has been pushed, held for a minimum
+  amount of time, and then released.  That is, a 1 is returned if a button
+  select action has occurred.  
 
 */
 uint8_t process_joystick(int16_t *dx, int16_t *dy) {
@@ -494,7 +494,7 @@ uint8_t process_joystick(int16_t *dx, int16_t *dy) {
         button_prev_time = cur_time;
     }
     if ( button_prev_time == 0 || 
-             button_prev_time + button_sample_delay < cur_time ) {
+         button_prev_time + button_sample_delay < cur_time ) {
         // button pushed after suitable delay, so ok to return state
         button_prev_time = cur_time;
         have_sample = 1;
@@ -512,7 +512,7 @@ uint8_t process_joystick(int16_t *dx, int16_t *dy) {
         // we got a release, return the press event
         prev_button_state = button_state;
         return 1;
-        }
+    }
 
     // we got a press, so change state to waiting for release, but
     // don't signal the press event yet.
@@ -526,10 +526,10 @@ uint8_t process_joystick(int16_t *dx, int16_t *dy) {
 extern volatile uint8_t shared_new_map_num;
 
 /*
-n mS debounce delay - ignore any further interrupts until this interval has
-passed.    Although this works in isolations, you should not be hammering on an
-interrupt line like this, so also make sure that there is debouncing on the
-switches as per the course notes.
+  n mS debounce delay - ignore any further interrupts until this interval has
+  passed.    Although this works in isolations, you should not be hammering on an
+  interrupt line like this, so also make sure that there is debouncing on the
+  switches as per the course notes.
 */
 
 const uint32_t bounce_delay = 500;
@@ -542,7 +542,7 @@ void handle_zoom_in() {
         in_prev_intr_time = cur_intr_time;
     }
     if ( in_prev_intr_time == 0 || 
-             in_prev_intr_time + bounce_delay < cur_intr_time ) {
+         in_prev_intr_time + bounce_delay < cur_intr_time ) {
 
         zoom_in();
         in_prev_intr_time = cur_intr_time;
@@ -557,7 +557,7 @@ void handle_zoom_out() {
         out_prev_intr_time = cur_intr_time;
     }
     if ( out_prev_intr_time == 0 || 
-             out_prev_intr_time + bounce_delay < cur_intr_time ) {
+         out_prev_intr_time + bounce_delay < cur_intr_time ) {
 
         zoom_out();
         out_prev_intr_time = cur_intr_time;

@@ -25,18 +25,19 @@ void map_to_glasses(int heading) {
     if (i & 0x4) { v[2] = 1;} else {v[2] = 0;}
     if (v[0]) 
         digitalWrite(a0, HIGH);
+    else
+        digitalWrite(a0, LOW);
+
     if (v[1])
         digitalWrite(a1, HIGH);
+    else
+        digitalWrite(a1, LOW);
+
     if (v[2])
         digitalWrite(a2, HIGH);
-    
-    
-}
-
-
-
-void loop() {
-    
+    else
+        digitalWrite(a2, LOW);    
     
 }
+
  
