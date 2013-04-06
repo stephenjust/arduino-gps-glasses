@@ -1,3 +1,4 @@
+
 #include <LSM303.h>
 #include <Wire.h>
 #include <math.h>
@@ -292,8 +293,12 @@ int LSM303::heading(void)
 // returned.
 int LSM303::heading(vector from)
 {
-    float pitch = asin(-a.x);
-    float roll = asin(a.y/cos(pitch));
+    //Need to normalize the vector so that trig isn't broken
+    vector b; 
+    vector_normalize(&b);
+    
+    float pitch = asin(-b.x);
+    float roll = asin(b.y/cos(pitch));
 
     float xh = m.x * cos(pitch) + m.z * sin(pitch);
     float yh = m.x * sin(roll) * sin(pitch)
@@ -302,6 +307,23 @@ int LSM303::heading(vector from)
         + m.z * cos(roll) * cos(pitch);
 
     float heading = 180 * atan2(yh, xh)/PI;
+        Serial.print("b.x");
+        Serial.print(b.x);
+        Serial.print("b.y");
+        Serial.print(b.y);
+        Serial.println();
+        Serial.print("Pitch: ");
+        Serial.print(pitch);
+        Serial.print("Roll:");
+        Serial.print(roll);
+        Serial.print("Xh: ");
+        Serial.print(xh);
+        Serial.print("Yh: ");
+        Serial.print(yh);
+        Serial.print("Zh: ");
+        Serial.print(zh);
+        
+    
     if (yh >= 0)
         return heading;
     else
