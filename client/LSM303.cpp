@@ -292,6 +292,22 @@ int LSM303::heading(void)
 // returned.
 int LSM303::heading(vector from)
 {
+    float pitch = asin(-a.x);
+    float roll = asin(a.y/cos(pitch));
+
+    float xh = m.x * cos(pitch) + m.z * sin(pitch);
+    float yh = m.x * sin(roll) * sin(pitch)
+        + m.y * cos(roll) - m.z * sin(roll) * cos(pitch);
+    float zh = -m.x * cos(roll) * sin(pitch) + m.y * sin(roll)
+        + m.z * cos(roll) * cos(pitch);
+
+    float heading = 180 * atan2(yh, xh)/PI;
+    if (yh >= 0)
+        return heading;
+    else
+        return (360 + heading);
+
+    /* Old not entirely reliable code
     // shift and scale
     m.x = (m.x - m_min.x) / (m_max.x - m_min.x) * 2 - 1.0;
     m.y = (m.y - m_min.y) / (m_max.y - m_min.y) * 2 - 1.0;
@@ -313,6 +329,7 @@ int LSM303::heading(vector from)
     int heading = round(atan2(vector_dot(&E, &from), vector_dot(&N, &from)) * 180 / M_PI);
     if (heading < 0) heading += 360;
   return heading;
+    */
 }
 
 void LSM303::vector_cross(const vector *a,const vector *b, vector *out)
