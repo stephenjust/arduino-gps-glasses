@@ -2,6 +2,7 @@
 
 build-cli
 *~
+\#*\#
 
 # C extensions
 *.so
