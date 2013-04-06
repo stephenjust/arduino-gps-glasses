@@ -93,31 +93,32 @@ void GTPA010::gpsCheck()
 	sensorSecond = !sensorSecond; // Toggle the static sensor class variable for use of other sensors
 }
 
-void GTPA010::readData()
-{
-	if(gpsLock) // If we have a lock
-	{
-		while (Serial2.available()) // And while the Serial. is available
-		{
-			dataBuffer = Serial2.read(); // Read the available data
-				
-			if (gps.encode(dataBuffer)) // Did a new valid sentence come in?
-				newData = true; // Notify the class that there is new data to show!
+void GTPA010::readData() {
+    if(gpsLock) // If we have a lock
+        {
+            while (Serial2.available()) // And while the Serial. is available
+                {
+                    dataBuffer = Serial2.read(); // Read the available data
+                    
+                    if (gps.encode(dataBuffer)) // Did a new valid sentence come in?
+                        newData = true; // Notify the class that there is new data to show!
 		}
 		
-		gps.get_position(&data.lat, &data.lon, &data.age); // Parse the position data
-		gps.crack_datetime(&data.year, &data.month, &data.day, &data.hour, &data.minute, &data.second, &data.hundredths, &data.age); // Parse the time data
+            gps.get_position(&data.lat, &data.lon, &data.age); // Parse the position data
+            gps.crack_datetime(&data.year, &data.month, &data.day, &data.hour, &data.minute, &data.second, &data.hundredths, &data.age); // Parse the time data
 		
-		if(data.lat == TinyGPS::GPS_INVALID_ANGLE || data.lon == TinyGPS::GPS_INVALID_ANGLE || gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES || gps.hdop() == TinyGPS::GPS_INVALID_HDOP) // If any component of this data is invalid, then cancel the new data decleration, and if enabled, print that the data is invalid across the serial
+            if(data.lat == TinyGPS::GPS_INVALID_ANGLE || data.lon == TinyGPS::GPS_INVALID_ANGLE || gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES || gps.hdop() == TinyGPS::GPS_INVALID_HDOP) // If any component of this data is invalid, then cancel the new data decleration, and if enabled, print that the data is invalid across the serial
 		{
-			newData = false;
+                    newData = false;
 			
-			#if SERIAL_PRINT_ENABLE
-			Serial.println("GPS DATA INVALID");
-			#endif
+#if SERIAL_PRINT_ENABLE
+                    Serial.println("GPS DATA INVALID");
+#endif
 		}
-			
-	}
+               
+	} else {
+        Serial.println("No GPS lock yet!");
+    }
 }
 
 #if FAKE_GPS_DATA
