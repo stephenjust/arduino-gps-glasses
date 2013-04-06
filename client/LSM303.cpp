@@ -193,14 +193,27 @@ void LSM303::readAcc(void)
       return;
     }
   }
-
+  
+  /* Old Wire.Reads(). Going to swap all y and z here */
+  
   byte xla = Wire.read();
   byte xha = Wire.read();
   byte yla = Wire.read();
   byte yha = Wire.read();
   byte zla = Wire.read();
   byte zha = Wire.read();
-
+   
+  
+  //New wire reads. Don't really work 
+  /*
+  byte xla = Wire.read();
+  byte xha = Wire.read();
+  byte zla = Wire.read();
+  byte zha = Wire.read();
+  byte yla = Wire.read();
+  byte yha = Wire.read();
+  */
+  
   // combine high and low bytes, then shift right to discard lowest 4 bits (which are meaningless)
   // GCC performs an arithmetic right shift for signed negative numbers, but this code will not work
   // if you port it to a compiler that does a logical right shift instead.
@@ -294,12 +307,13 @@ int LSM303::heading(void)
 int LSM303::heading(vector from)
 {
     //Need to normalize the vector so that trig isn't broken
-    vector b; 
+    vector b = a;
     vector_normalize(&b);
     
     float pitch = asin(-b.x);
     float roll = asin(b.y/cos(pitch));
 
+    
     float xh = m.x * cos(pitch) + m.z * sin(pitch);
     float yh = m.x * sin(roll) * sin(pitch)
         + m.y * cos(roll) - m.z * sin(roll) * cos(pitch);
@@ -323,12 +337,13 @@ int LSM303::heading(vector from)
         Serial.print("Zh: ");
         Serial.print(zh);
         
-    
+    return heading;
+    /*
     if (yh >= 0)
         return heading;
     else
         return (360 + heading);
-
+    */
     /* Old not entirely reliable code
     // shift and scale
     m.x = (m.x - m_min.x) / (m_max.x - m_min.x) * 2 - 1.0;

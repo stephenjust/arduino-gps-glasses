@@ -77,7 +77,7 @@ void setup() {
 
     compass.init(LSM303DLH_DEVICE);
     compass.enableDefault();
-    compass.setMagGain(LSM303::magGain_47);
+    compass.setMagGain(LSM303::magGain_56);
     Serial.println("Compass initialized!");
 
     compass.read();
