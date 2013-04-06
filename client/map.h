@@ -69,6 +69,7 @@ uint8_t get_cursor_screen_x_y(uint16_t *cursor_screen_x,uint16_t *cursor_screen_
 void draw_cursor();
 void erase_cursor();
 void draw_compass();
+void draw_gps_dot();
 void move_window_to(int16_t x, int16_t y);
 void move_window(int32_t lon, int32_t lat);
 void move_cursor_to(int16_t x, int16_t y);

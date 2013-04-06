@@ -11,6 +11,9 @@
  *
  */
 
+#ifndef _TIMER3_H
+#define _TIMER3_H
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
@@ -39,3 +42,5 @@ class TimerThree
 };
 
 extern TimerThree Timer3;
+
+#endif

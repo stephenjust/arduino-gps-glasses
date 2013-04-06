@@ -355,6 +355,8 @@ void loop() {
     }
     // Refresh compass display
     draw_compass();
+    // Refresh gps dot
+    draw_gps_dot();
 
     // always update the status message area if message changes
     // Indicate which point we are waiting for
