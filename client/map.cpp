@@ -5,6 +5,7 @@
 #include "lcd_image.h"
 #include "map.h"
 #include "LSM303.h"
+#include "GTPA010.h"
 
 // #define DEBUG
 
@@ -206,8 +207,6 @@ void draw_compass() {
   compass_old = compass_dir;
   compass_drawn = 1;
 
-  Serial.println(compass_dir);
-
   tft.fillCircle(compass_x, compass_y, compass_r, BLUE);
 
   int tip_x = compass_x + compass_r * cos(compass_dir*PI/180);
@@ -227,6 +226,23 @@ void draw_compass() {
   tft.drawLine(tip_x, tip_y, a1_x, a1_y, RED);
   tft.drawLine(tip_x, tip_y, a2_x, a2_y, RED);
 }
+
+
+/**
+ * Draw the GPS location on the map
+ *
+ * Display a warning message if a GPS error occurs
+ */
+void draw_gps_dot() {
+    if (!GTPA010::gpsLock) {
+        tft.println("NO GPS LOCK!");
+    } else {
+        tft.println("GPS LOCKED!");
+    }
+
+    // FIXME: Actually get GPS data!
+}
+
 
 void draw_map_screen() {
     #ifdef DEBUG
@@ -248,7 +264,6 @@ void draw_map_screen() {
     compass_drawn = 0;
     
 }
-
 
 uint8_t is_cursor_visible() {
     uint8_t r = 
