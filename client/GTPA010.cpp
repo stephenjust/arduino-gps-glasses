@@ -33,6 +33,9 @@ void GTPA010::begin()
 	Serial2.begin(GPS_BAUD_RATE);
 	pinMode(GPS_FIX_PIN,INPUT);
 	pinMode(GPS_ENABLE_PIN,OUTPUT);
+
+        // Turn off GPS power saving mode
+        Serial2.print("$PMTK320,0*26\n\r");
 	
 	// Setup GPS Interrupt check - Defines in classes/Config.h
 	Timer3.initialize(timer_ticks);
