@@ -3,11 +3,6 @@ Graph module for undirected graphs.
 """
 
 import random
-
-try:
-    import display
-except:
-    print("Warning: failed to load display module.  Graph drawing will not work.")
     
 class Digraph:
     """
@@ -144,14 +139,6 @@ class Digraph:
         >>> G.is_path([1, 5, 4, 2])
         False
         """
-        # split path list in to tuples and verify that each tuple is in the set of edges in the graph
-        edges = self.edges()
-        is_path = True
-        for i in range(len(path) - 1):
-          if (path[i], path[i + 1]) not in edges:
-            is_path = False
-            break
-        return is_path
         pass
 
 def random_graph(n, m):
@@ -215,30 +202,6 @@ def shortest_path(G, source, dest):
     >>> G.is_path(path)
     True
     """
-    # create a spanning tree(digraph) using a breadth-first-search
-    to_visit = list(G.vertices())
-    visiting = [source]
-    nxt = []
-    New_G = Digraph()
-    # so, store two levels of vertices, the level you're currently walking over, and the next level to walk over, at the end of finding all the next vertices to walk over, change levels and clear the next level of vertices to store new ones, all while adding edges to the spanning tree, and marking the vertices you've been to
-    while (to_visit):
-      for x in visiting:
-        cur = x
-        for n in G.adj_to(cur):
-          if n in to_visit:
-            nxt.append(n)
-            New_G.add_edge((cur, n))
-            New_G.add_vertex(n)
-        to_visit.remove(cur)
-      visiting = nxt
-      nxt = []
-      
-    # now start at the end of the newly formed spanning tree (digraph) at the destination point and walk back; there should one unique "adj_from" vertex for each point
-    res = [dest]
-    while (res[-1] is not source):
-      res.append(New_G.adj_from(res[-1]).pop())
-    res.reverse()
-    return res
     pass
 
 def compress(walk):
