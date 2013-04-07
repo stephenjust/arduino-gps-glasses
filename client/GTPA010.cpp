@@ -90,7 +90,7 @@ void GTPA010::fakeData()
 	data.lon = -11298005 - Sensors::getTime() * 3;
 	#else
 	data.lat = 5351226;
-	data.lon = -11349773 - Sensors::getTime() * 3;
+	data.lon = -11349773; //Fixed to be a constant point and not moving.
 	#endif
 	
 	newData = true;

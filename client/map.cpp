@@ -255,9 +255,7 @@ void draw_gps_dot() {
     int16_t yahlat = latitude_to_y(current_map_num, gdata->lat) - screen_map_y;
     Serial.print("Yahlon");
     Serial.print(yahlon);
-    Serial.println();
-    Serial.print(yahlat);
-    Serial.println();
+    GTPA010::printData();
     tft.fillCircle(yahlon, yahlat, dot_radius, BLUE);
 
     // FIXME: Actually get GPS data!
