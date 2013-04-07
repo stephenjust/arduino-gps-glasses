@@ -11,7 +11,7 @@
 #define DISABLE_SDCARD_WRITING 0
 #define DELETE_DATAFILE_ON_STARTUP 0
 
-#define FAKE_GPS_DATA 0
+#define FAKE_GPS_DATA 1
 #define ANTLER_LAKE 0
 #define UOFA_2 0
 

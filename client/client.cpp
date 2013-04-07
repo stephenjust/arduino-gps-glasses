@@ -74,6 +74,15 @@ void setup() {
     GTPA010::begin();
     Serial.println("GPS initialized!");
     
+    //Get the GPS data
+    gpsData* gdata;
+    GTPA010::fakeData();
+    gdata = GTPA010::getData();
+    
+    //Print onto Serial Monitor for debugging
+    Serial.println("GPS Data for debugging");
+    Serial.println(gdata->lat);
+    Serial.println(gdata->lon);
 
     compass.init(LSM303DLH_DEVICE);
     compass.enableDefault();

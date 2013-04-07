@@ -321,6 +321,7 @@ int LSM303::heading(vector from)
         + m.z * cos(roll) * cos(pitch);
 
     float heading = 180 * atan2(yh, xh)/PI;
+        /* Debugging output.
         Serial.print("b.x");
         Serial.print(b.x);
         Serial.print("b.y");
@@ -336,7 +337,7 @@ int LSM303::heading(vector from)
         Serial.print(yh);
         Serial.print("Zh: ");
         Serial.print(zh);
-        
+        */
     return heading;
     /*
     if (yh >= 0)

@@ -239,6 +239,26 @@ void draw_gps_dot() {
     } else {
         tft.println("GPS LOCKED!");
     }
+    
+    //In either case, print a you are here message. If the data is crap, the user should be able to 
+    //tell by the messages spamming the screen.
+    
+    //Get the GPS data
+    gpsData* gdata;
+    
+    int fake = 1;
+    if (fake){ GTPA010::fakeData();} else {GTPA010::readData();}
+    gdata = GTPA010::getData();
+    
+    //Take the lat, lon, map to pixels
+    int16_t yahlon = longitude_to_x(current_map_num, gdata->lon) - screen_map_x;
+    int16_t yahlat = latitude_to_y(current_map_num, gdata->lat) - screen_map_y;
+    Serial.print("Yahlon");
+    Serial.print(yahlon);
+    Serial.println();
+    Serial.print(yahlat);
+    Serial.println();
+    tft.fillCircle(yahlon, yahlat, dot_radius, BLUE);
 
     // FIXME: Actually get GPS data!
 }

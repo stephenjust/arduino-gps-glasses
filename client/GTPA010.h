@@ -6,6 +6,7 @@
 #include "TinyGPS.h"
 #include "TimerThree.h"
 
+
 typedef struct gpsData
 {
 	long int lat; // Stores the latitude as a long int as specified by the TinyGPS librairy

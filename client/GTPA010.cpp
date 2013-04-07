@@ -6,7 +6,6 @@
 #include "TimerThree.h"
 
 
-
 bool GTPA010::newData = 0;
 
 /* Static variable declarations */
@@ -34,18 +33,7 @@ void GTPA010::begin()
 	pinMode(GPS_FIX_PIN,INPUT);
 	pinMode(GPS_ENABLE_PIN,OUTPUT);
 
-        // Turn off GPS power saving mode
-        Serial2.print("$PMTK420*3F\r\n");
 
-        int done = 0;
-        while (!done) {
-            while (!Serial2.available()) { }
-            char c = Serial2.read();
-            Serial.write(c);
-            if (c == '\n')
-                done = 1;
-        }
-	
 	// Setup GPS Interrupt check - Defines in classes/Config.h
 	Timer3.initialize(timer_ticks);
 	digitalWrite(GPS_ENABLE_PIN,HIGH);
@@ -101,8 +89,8 @@ void GTPA010::fakeData()
 	data.lat = 5348435;
 	data.lon = -11298005 - Sensors::getTime() * 3;
 	#else
-	data.lat = 5352712;
-	data.lon = -11352953 - Sensors::getTime() * 3;
+	data.lat = 5351226;
+	data.lon = -11349773 - Sensors::getTime() * 3;
 	#endif
 	
 	newData = true;
