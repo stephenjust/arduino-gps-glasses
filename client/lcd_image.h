@@ -5,6 +5,17 @@
 #ifndef _LCD_IMAGE_H
 #define _LCD_IMAGE_H
 
+
+// Assign human-readable names to some common 16-bit color values:
+#define	BLACK   0x0000
+#define	BLUE	0x001F
+#define	RED	 0xF800
+#define	GREEN   0x07E0
+#define CYAN	0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW  0xFFE0
+#define WHITE   0xFFFF
+
 typedef struct {
   char *file_name;
   uint16_t ncols;

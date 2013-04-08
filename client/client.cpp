@@ -6,7 +6,6 @@
 
 #include "TimerThree.h"
 #include "Sensors.h"
-#include "Config.h"
 #include "TinyGPS.h"
 #include "GTPA010.h"
 #include "LSM303.h"

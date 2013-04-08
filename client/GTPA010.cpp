@@ -1,6 +1,5 @@
 #include "GTPA010.h"
 
-#include "Config.h"
 #include "Sensors.h"
 #include "TinyGPS.h"
 #include "TimerThree.h"
@@ -85,13 +84,8 @@ void GTPA010::readData()
 void GTPA010::fakeData()
 {
 	// Fake the data
-	#if ANTLER_LAKE
-	data.lat = 5348435;
-	data.lon = -11298005 - Sensors::getTime() * 3;
-	#else
 	data.lat = 5351226;
 	data.lon = -11349773; //Fixed to be a constant point and not moving.
-	#endif
 	
 	newData = true;
 }

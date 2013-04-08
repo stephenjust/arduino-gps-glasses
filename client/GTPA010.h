@@ -1,11 +1,17 @@
 #ifndef _GTPA010_H_
 #define _GTPA010_H_
 
-#include "Config.h"
 #include "Sensors.h"
 #include "TinyGPS.h"
 #include "TimerThree.h"
 
+
+// GPS Setup
+#define GPS_FIX_PIN 11
+#define GPS_ENABLE_PIN 12
+#define GPS_BAUD_RATE 4800
+
+#define FAKE_GPS_DATA 1
 
 typedef struct gpsData
 {
