@@ -34,7 +34,7 @@ void GTPA010::begin()
 
 
 	// Setup GPS Interrupt check - Defines in classes/Config.h
-	Timer3.initialize(timer_ticks);
+        Timer3.initialize(timer_ticks);
 	digitalWrite(GPS_ENABLE_PIN,HIGH);
 	Timer3.attachInterrupt(&gpsCheck);
 }
@@ -77,7 +77,9 @@ void GTPA010::readData()
 			#endif
 		}
 			
-	}
+	} else {
+            Serial.println("No lock!");
+        }
 }
 
 #if FAKE_GPS_DATA

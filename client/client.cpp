@@ -13,6 +13,7 @@
 #include "map.h"
 #include "path.h"
 #include "serial_handling.h"
+#include "ledon.h"
 
 // #define DEBUG_SCROLLING
 // #define DEBUG_PATH
@@ -74,18 +75,20 @@ void setup() {
     Serial.println("GPS initialized!");
     
     //Get the GPS data
-    gpsData* gdata;
-    GTPA010::fakeData();
-    gdata = GTPA010::getData();
+    //gpsData* gdata;
+    //    GTPA010::fakeData();
+    GTPA010::readData();
+    GTPA010::printData();
+    //gdata = GTPA010::getData();
     
     //Print onto Serial Monitor for debugging
-    Serial.println("GPS Data for debugging");
-    Serial.println(gdata->lat);
-    Serial.println(gdata->lon);
+    //Serial.println("GPS Data for debugging");
+    //Serial.println(gdata->lat);
+    //Serial.println(gdata->lon);
 
     compass.init(LSM303DLH_DEVICE);
     compass.enableDefault();
-    compass.setMagGain(LSM303::magGain_40);
+    compass.setMagGain(LSM303::magGain_47);
     Serial.println("Compass initialized!");
 
     compass.read();
@@ -95,6 +98,11 @@ void setup() {
     } else {
         Serial.println("Timed out!"); 
     }
+
+    /*    while (1) {
+        compass.read();
+        map_to_glasses(compass.heading());
+        }*/
 
     initialize_screen();
 
@@ -134,7 +142,7 @@ void setup() {
 #endif
 }
 
-const uint16_t screen_scroll_delta = 32;
+const uint16_t screen_scroll_delta = 64;
 const uint16_t screen_left_margin = 10;
 const uint16_t screen_right_margin = 117;
 const uint16_t screen_top_margin = 10;
