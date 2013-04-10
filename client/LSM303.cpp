@@ -11,6 +11,9 @@
 #define ACC_ADDRESS_SA0_A_LOW  (0x30 >> 1)
 #define ACC_ADDRESS_SA0_A_HIGH (0x32 >> 1)
 
+int past_headings[3] = {0, 0, 0};
+int past_heading_i = 0;
+
 // Constructors ////////////////////////////////////////////////////////////////
 
 LSM303::LSM303(void)
@@ -238,10 +241,10 @@ void LSM303::readMag(void)
     }
   }
 
-  byte xhm = Wire.read();
-  byte xlm = Wire.read();
+  uint16_t xhm = Wire.read();
+  uint16_t xlm = Wire.read();
 
-  byte yhm, ylm, zhm, zlm;
+  uint16_t yhm, ylm, zhm, zlm;
 
   if (_device == LSM303DLH_DEVICE)
   {
@@ -261,16 +264,19 @@ void LSM303::readMag(void)
 
   }
 
+
   // combine high and low bytes
   m.x = (int16_t)(xhm << 8 | xlm);
   m.y = (int16_t)(yhm << 8 | ylm);
   m.z = (int16_t)(zhm << 8 | zlm);
 
-  /*Serial.println(m.x);
+#ifdef DEBUG_COMPASS
+  Serial.println(m.x);
   Serial.println(m.y);
   Serial.println(m.z);
   Serial.println();
-  delay(100);*/
+  delay(1000);
+#endif
 }
 
 // Reads all 6 channels of the LSM303 and stores them in the object variables
@@ -280,25 +286,8 @@ void LSM303::read(void)
   readMag();
 }
 
-// Returns the number of degrees from the -Y axis that it
-// is pointing.
+// Returns a heading in degrees, compensated for pitch and roll
 int LSM303::heading(void)
-{
-  return heading((vector){0,-1,0});
-}
-
-// Returns the number of degrees from the From vector projected into
-// the horizontal plane is away from north.
-//
-// Description of heading algorithm:
-// Shift and scale the magnetic reading based on calibration data to
-// to find the North vector. Use the acceleration readings to
-// determine the Down vector. The cross product of North and Down
-// vectors is East. The vectors East and North form a basis for the
-// horizontal plane. The From vector is projected into the horizontal
-// plane and the angle between the projected vector and north is
-// returned.
-int LSM303::heading(vector from)
 {
     //Need to normalize the vector so that trig isn't broken
     vector b = a;
@@ -314,10 +303,17 @@ int LSM303::heading(vector from)
     float zh = -(m.x+105) * cos(roll) * sin(pitch) + (m.y-115) * sin(roll)
         + m.z * cos(roll) * cos(pitch);
 
-    float heading = 180 * atan2(yh, xh)/PI;
+    int heading = (int)(180 * atan2(yh, xh)/PI) % 360;
     
+    // Populate some fields for average heading calculation
+    if (!past_headings[0]) past_headings[0] = heading;
+    if (!past_headings[1]) past_headings[1] = heading;
+    if (!past_headings[2]) past_headings[2] = heading;
+    past_headings[past_heading_i] = heading;
+    past_heading_i = (past_heading_i + 1) % 3;
+
     /* Debugging output. */
-    /*
+#ifdef DEBUG_COMPASS
     Serial.print("b.x");
     Serial.print(b.x);
     Serial.print("b.y");
@@ -328,21 +324,18 @@ int LSM303::heading(vector from)
     Serial.print("Roll:");
     Serial.print(roll);
     Serial.print("Xh: ");
-    Serial.print(xh);*/
+    Serial.print(xh);
     Serial.print("Yh: ");
     Serial.print(yh);
-    /*Serial.print("Zh: ");
+    Serial.print("Zh: ");
     Serial.print(zh);
-    */
+    
     Serial.print("Heading: ");
     Serial.println(heading);
-    
+#endif
 
-    if (heading < 0) {
-        return heading + 360;
-    } else {
-        return heading;
-    }
+    // Return average of most three recent headings
+    return ((int)(past_headings[0] + past_headings[1] + past_headings[2])/3) % 360;
 }
 
 void LSM303::vector_cross(const vector *a,const vector *b, vector *out)
