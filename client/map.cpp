@@ -234,8 +234,6 @@ void draw_compass() {
   // Arrow head
   tft.drawLine(tip_x, tip_y, a1_x, a1_y, RED);
   tft.drawLine(tip_x, tip_y, a2_x, a2_y, RED);
-
-  map_to_glasses(compass_dir);
 }
 
 

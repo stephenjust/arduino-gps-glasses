@@ -167,6 +167,16 @@ void loop() {
     int16_t dy = 0;
     uint8_t select_button_event = 0;
 
+    // Update glasses heading
+    if (has_path) {
+        //Serial.print("Compass: ");
+        //Serial.println(compass.heading());
+        compass.read();
+        map_to_glasses((int)(target_dir - compass.heading()-180) % 360);
+    } else {
+        map_to_glasses(0);
+    }
+
     // If the map has been zoomed in or out we need to do a redraw,
     // and will center the display window about the cursor.
     // So a zoom in-out will re-center over a mis-positioned cursor!

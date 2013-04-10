@@ -7,6 +7,7 @@
 #include "map.h"
 #include "serial_handling.h"
 #include "ledon.h"
+#include "LSM303.h"
 
 // #define DEBUG_PATH
 
@@ -16,7 +17,8 @@
 */
 int16_t path_errno;
 
-int8_t target_dir = 0;
+int16_t target_dir = 0;
+int8_t has_path = 0;
 
 extern Adafruit_ST7735 tft;
 
@@ -83,6 +85,7 @@ uint8_t read_path(uint16_t *length_p, coord_t *path_p[]) {
     coord_t *tmp_path = (coord_t *) malloc( tmp_length * sizeof(coord_t));
     if ( !tmp_path ) { 
         path_errno = 2;
+        has_path = 0;
         return 0; 
         }
 
@@ -119,6 +122,7 @@ uint8_t read_path(uint16_t *length_p, coord_t *path_p[]) {
     last_path_p = path_p;
     last_path_len = length_p;
 
+    has_path = 1;
     return 1;
     }
 
