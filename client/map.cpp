@@ -7,6 +7,7 @@
 #include "LSM303.h"
 #include "GTPA010.h"
 #include "ledon.h"
+#include "path.h"
 // #define DEBUG
 
 /*
@@ -54,9 +55,11 @@ uint16_t cursor_map_y;
 int32_t cursor_lon;
 int32_t cursor_lat;
 
+// the current position of the gps dot on map
 uint16_t gps_map_y;
 uint16_t gps_map_x;
 
+// the approximate lat and lon of gps dot
 int32_t gps_lon = 0;
 int32_t gps_lat = 0;
 
@@ -243,32 +246,35 @@ void draw_compass() {
  */
 void draw_gps_dot() {
     
-    //In either case, print a you are here message. If the data is crap, the user should be able to 
-    //tell by the messages spamming the screen.
-    
     //Get the GPS data
     gpsData* gdata;
-    
     GTPA010::readData();
     gdata = GTPA010::getData();
+
+    // Erase old dot if position changed
+    if ((gdata->lat != gps_lat || gdata->lon != gps_lon) && is_gps_visible()) {
+        erase_gps();
+    }
+
+    if (gdata->lat != gps_lat || gdata->lon != gps_lon) {
+        coord_t * dest = get_prev_destination();
+    }
+
+    gps_lat = gdata->lat;
+    gps_lon = gdata->lon;
     
     //Take the lat, lon, map to pixels
-    int16_t yahlon = longitude_to_x(current_map_num, gdata->lon) - screen_map_x;
-    int16_t yahlat = latitude_to_y(current_map_num, gdata->lat) - screen_map_y;
+    gps_map_x = longitude_to_x(current_map_num, gps_lon);
+    gps_map_y = latitude_to_y(current_map_num, gps_lat);
 
-    Serial.print("Yahlon");
-    Serial.print(yahlon);
+#ifdef DEBUG_GPS
     GTPA010::printData();
+#endif
 
-    //if (yahlat != gps_map_x || yahlon != gps_map_y) {
-        tft.fillCircle(yahlon, yahlat, dot_radius, BLUE);
-        erase_gps();
+    if (is_gps_visible())
+        tft.fillCircle(gps_map_x - screen_map_x,
+                       gps_map_y - screen_map_y, dot_radius, BLUE);
 
-        gps_map_x = yahlat;
-        gps_map_x = yahlon;
-        //}
-
-    // FIXME: Actually get GPS data!
 }
 
 
@@ -299,20 +305,6 @@ uint8_t is_gps_visible() {
         gps_map_x < screen_map_x + display_window_width &&
         screen_map_y < gps_map_y &&
         gps_map_y < screen_map_y + display_window_height; 
-
-#ifdef IGNORE
-    if ( !r ) {
-        Serial.print("cv: ");
-        Serial.print(screen_map_x);
-        Serial.print(" ");
-        Serial.print(screen_map_y);
-        Serial.print(" ");
-        Serial.print(cursor_map_x);
-        Serial.print(" ");
-        Serial.print(cursor_map_y);
-        Serial.println();
-        }
-#endif
 
     return r;
     }

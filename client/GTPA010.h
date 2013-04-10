@@ -7,11 +7,13 @@
 
 
 // GPS Setup
+//#define DEBUG_GPS
+
 #define GPS_FIX_PIN 11
 #define GPS_ENABLE_PIN 12
 #define GPS_BAUD_RATE 4800
 
-#define FAKE_GPS_DATA 0
+#define FAKE_GPS_DATA 1
 
 typedef struct gpsData
 {

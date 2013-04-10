@@ -55,6 +55,10 @@ void GTPA010::gpsCheck()
 
 void GTPA010::readData()
 {
+#if FAKE_GPS_DATA
+    GTPA010::fakeData();
+    return;
+#endif
 	if(gpsLock) // If we have a lock
 	{
 		while (Serial2.available()) // And while the Serial. is available
@@ -78,18 +82,35 @@ void GTPA010::readData()
 		}
 			
 	} else {
+#ifdef DEBUG_GPS
             Serial.println("No lock!");
+#endif
         }
 }
 
 #if FAKE_GPS_DATA
-void GTPA010::fakeData()
-{
-	// Fake the data
-	data.lat = 5351226;
-	data.lon = -11349773; //Fixed to be a constant point and not moving.
-	
-	newData = true;
+#import "gps_fake_data.h"
+
+int tstart_time = 0;
+
+/**
+ * Provide some fake data in case we are demoing in a location
+ * where it is not possible to get a GPS fix
+ */
+void GTPA010::fakeData() {
+    // Set the start time of the path
+    if (!tstart_time) {
+        tstart_time = Sensors::getTime();
+    }
+
+    // Calculate how far into the path we are
+    int index = (Sensors::getTime() - tstart_time) % fd_len;
+
+    // Set the fake data
+    data.lat = fd_lat[index];
+    data.lon = fd_lon[index];
+
+    newData = true;
 }
 #endif
 

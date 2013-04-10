@@ -2,9 +2,11 @@
 #include <Adafruit_ST7735.h>
 #include <SD.h>
 #include <mem_syms.h>
+#include <math.h>
 
 #include "map.h"
 #include "serial_handling.h"
+#include "ledon.h"
 
 // #define DEBUG_PATH
 
@@ -14,7 +16,13 @@
 */
 int16_t path_errno;
 
+int8_t target_dir = 0;
+
 extern Adafruit_ST7735 tft;
+
+// Keep track of the last requested path
+uint16_t * last_path_len = 0;
+coord_t ** last_path_p = 0;
 
 // read a path from the serial port and return the length of the
 // path and a pointer to the array of coordinates.  That array should
@@ -98,6 +106,19 @@ uint8_t read_path(uint16_t *length_p, coord_t *path_p[]) {
         tmp_path++;
         }
 
+    // Give direction to follow from first to second node
+    if (*length_p >= 2) {
+        coord_t s_coord = (*path_p)[0];
+        coord_t e_coord = (*path_p)[1];
+        target_dir = (int)(atan2(e_coord.lat-s_coord.lat,
+                                  e_coord.lon-s_coord.lon)*180/PI) % 360;
+#ifdef DEBUG_GLASSES
+        map_to_glasses(target_dir);
+#endif
+    }
+    last_path_p = path_p;
+    last_path_len = length_p;
+
     return 1;
     }
 
@@ -116,23 +137,32 @@ uint8_t is_coord_visible(coord_t point) {
     return r;
     }
 
+coord_t * get_prev_destination() {
+    if (!last_path_len || !*last_path_len)
+        return 0;
+
+    return &(*last_path_p[*last_path_len-1]);
+}
+
 void draw_path(uint16_t length, coord_t path[]) {
-  #ifdef DEBUG_PATH
-  Serial.println("Drawing path!");
-  #endif
+#ifdef DEBUG_PATH
+    Serial.println("Drawing path!");
+#endif
 
-  for (int i = 0; i < (length - 1); i++) {
-    #ifdef DEBUG_PATH
-    Serial.println("Drawing line");
-    #endif
-
-    if (1 /*is_coord_visible(path[i]) && is_coord_visible(path[i+1])*/) {
-      int16_t startx = longitude_to_x(current_map_num, path[i].lon) - screen_map_x;
-      int16_t starty = latitude_to_y(current_map_num, path[i].lat) - screen_map_y;
-      int16_t endx = longitude_to_x(current_map_num, path[i+1].lon) - screen_map_x;
-      int16_t endy = latitude_to_y(current_map_num, path[i+1].lat) - screen_map_y;
-
-      tft.drawLine(startx, starty, endx, endy, BLUE);
-    } 
-  }
+    for (int i = 0; i < (length - 1); i++) {
+#ifdef DEBUG_PATH
+        Serial.println("Drawing line");
+#endif
+        
+        int16_t startx = longitude_to_x(current_map_num, path[i].lon)
+            - screen_map_x;
+        int16_t starty = latitude_to_y(current_map_num, path[i].lat)
+            - screen_map_y;
+        int16_t endx = longitude_to_x(current_map_num, path[i+1].lon)
+            - screen_map_x;
+        int16_t endy = latitude_to_y(current_map_num, path[i+1].lat)
+            - screen_map_y;
+        
+        tft.drawLine(startx, starty, endx, endy, BLUE);
+    }
 }
