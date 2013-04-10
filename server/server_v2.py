@@ -235,6 +235,7 @@ def main():
         debug = True
     else:
         debug = False
+    debug = True
 
     # Generate a graph from the map and grab the needed values
     G = digraph.Digraph(E)
@@ -247,13 +248,14 @@ def main():
     if debug:
         print("Graph loaded with {} vertices and {} edges.".format(G.num_vertices(), G.num_edges()))
 
+    # initialize storage value
+    prev_end = 0
     time2 = time.time()
     delta_t = repr(time2 - time1)
     print("Done initializing, took " + delta_t + " seconds")
 
     # Parse input
     while True:
-        
         msg = receive(serial_in)
         debug and print("GOT:{}:".format(msg), file=sys.stderr)
 
@@ -273,16 +275,59 @@ def main():
 
         debug and print("Routing path from vertex {} to {}".format(start, end))
 
+        if end is prev_end:
+            print("In secondary! Woot!")
+            if start is end:
+                # we're there!
+                prev_end = 0
+                continue
+            # do useful things to speed stuffs up:
+            # if the user is on the correct path, dont recalculate
+            # if the user has deviated, recalculate
+            secondary_end = 0
+            for i in range(len(path)):
+                print("i is: " + str(i) + " and path[i] is: " + str(path[i]))
+                if path[i] == start:
+                    secondary_end = path[i + 1]
+            if secondary_end is 0:
+                print("Secondary is 0..")
+                break
+            secondary_path = least_cost_path(G, start, secondary_end, cost_distance)
+            
+            send(serial_out, str(len(secondary_path)))
+            print("The secondary path is:")
+            for v in secondary_path:
+                print(str(v))
+                print("lat: " + str(int(V_coord[v][0] * 10**5)) + " lon: " + str(int(V_coord[v][1] * 10**5)))
+                send(serial_out, "{} {}".format(int(V_coord[v][0] * 10**5),
+                                     int(V_coord[v][1] * 10**5)))
+                
+            print("Send path of length {}".format(len(secondary_path)))
+            
+            time2 = time.time()
+            delta_t = repr(time2 - time1)
+            print("Done processing, took " + delta_t + "seconds")
+            continue
+
         path = least_cost_path(G, start, end, cost_distance)
         if path is None:
             send(serial_out, "0")
             debug and print("No path found!", file=sys.stderr)
         else:
             send(serial_out, str(len(path)))
+            print("The path is:")
             for v in path:
+                print(str(v))
+                print("lat: " + str(int(V_coord[v][0] * 10**5)) + " lon: " + str(int(V_coord[v][1] * 10**5)))
                 send(serial_out, "{} {}".format(int(V_coord[v][0] * 10**5),
                                      int(V_coord[v][1] * 10**5)))
             print("Send path of length {}".format(len(path)))
+            
+        
+        # store for optimization
+        prev_start = start
+        prev_end = end
+        
         time2 = time.time()
         delta_t = repr(time2 - time1)
         print("Done processing, took " + delta_t + "seconds")
