@@ -6,7 +6,8 @@
 #include "map.h"
 #include "LSM303.h"
 #include "GTPA010.h"
-
+#include "ledon.h"
+#include "path.h"
 // #define DEBUG
 
 /*
@@ -53,6 +54,14 @@ uint16_t cursor_map_y;
 // the current approximate lat and lon of the cursor
 int32_t cursor_lon;
 int32_t cursor_lat;
+
+// the current position of the gps dot on map
+uint16_t gps_map_y;
+uint16_t gps_map_x;
+
+// the approximate lat and lon of gps dot
+int32_t gps_lon = 0;
+int32_t gps_lat = 0;
 
 const uint8_t num_maps = 6;
 
@@ -199,7 +208,7 @@ uint8_t set_zoom() {
 void draw_compass() {
 
   compass.read();
-  int compass_dir = compass.heading();
+  int compass_dir = compass.heading()+90;
 
   // Avoid updating 
   if (abs(compass_dir - compass_old) < 5 && compass_drawn == 1)
@@ -225,6 +234,8 @@ void draw_compass() {
   // Arrow head
   tft.drawLine(tip_x, tip_y, a1_x, a1_y, RED);
   tft.drawLine(tip_x, tip_y, a2_x, a2_y, RED);
+
+  map_to_glasses(compass_dir);
 }
 
 
@@ -234,31 +245,36 @@ void draw_compass() {
  * Display a warning message if a GPS error occurs
  */
 void draw_gps_dot() {
-    if (!GTPA010::gpsLock) {
-        tft.println("NO GPS LOCK!");
-    } else {
-        tft.println("GPS LOCKED!");
-    }
-    
-    //In either case, print a you are here message. If the data is crap, the user should be able to 
-    //tell by the messages spamming the screen.
     
     //Get the GPS data
     gpsData* gdata;
-    
-    int fake = 1;
-    if (fake){ GTPA010::fakeData();} else {GTPA010::readData();}
+    GTPA010::readData();
     gdata = GTPA010::getData();
+
+    // Erase old dot if position changed
+    if ((gdata->lat != gps_lat || gdata->lon != gps_lon) && is_gps_visible()) {
+        erase_gps();
+    }
+
+    if (gdata->lat != gps_lat || gdata->lon != gps_lon) {
+        coord_t * dest = get_prev_destination();
+    }
+
+    gps_lat = gdata->lat;
+    gps_lon = gdata->lon;
     
     //Take the lat, lon, map to pixels
-    int16_t yahlon = longitude_to_x(current_map_num, gdata->lon) - screen_map_x;
-    int16_t yahlat = latitude_to_y(current_map_num, gdata->lat) - screen_map_y;
-    Serial.print("Yahlon");
-    Serial.print(yahlon);
-    GTPA010::printData();
-    tft.fillCircle(yahlon, yahlat, dot_radius, BLUE);
+    gps_map_x = longitude_to_x(current_map_num, gps_lon);
+    gps_map_y = latitude_to_y(current_map_num, gps_lat);
 
-    // FIXME: Actually get GPS data!
+#ifdef DEBUG_GPS
+    GTPA010::printData();
+#endif
+
+    if (is_gps_visible())
+        tft.fillCircle(gps_map_x - screen_map_x,
+                       gps_map_y - screen_map_y, dot_radius, BLUE);
+
 }
 
 
@@ -282,6 +298,16 @@ void draw_map_screen() {
     compass_drawn = 0;
     
 }
+
+uint8_t is_gps_visible() {
+    uint8_t r = 
+        screen_map_x < gps_map_x &&
+        gps_map_x < screen_map_x + display_window_width &&
+        screen_map_y < gps_map_y &&
+        gps_map_y < screen_map_y + display_window_height; 
+
+    return r;
+    }
 
 uint8_t is_cursor_visible() {
     uint8_t r = 
@@ -307,6 +333,18 @@ uint8_t is_cursor_visible() {
     return r;
     }
 
+uint8_t get_gps_screen_x_y(
+    uint16_t *gps_screen_x,uint16_t *gps_screen_y) {
+    if ( is_gps_visible ) {
+        *gps_screen_x = gps_map_x - screen_map_x;
+        *gps_screen_y = gps_map_y - screen_map_y;
+        return 1;
+        }
+
+    // not visible
+    return 0;
+    }
+
 uint8_t get_cursor_screen_x_y(
     uint16_t *cursor_screen_x,uint16_t *cursor_screen_y) {
     if ( is_cursor_visible ) {
@@ -327,6 +365,21 @@ void draw_cursor() {
         cursor_screen_x = cursor_map_x - screen_map_x;
         cursor_screen_y = cursor_map_y - screen_map_y;
         tft.fillCircle(cursor_screen_x, cursor_screen_y, dot_radius, RED);
+        }
+    }
+
+void erase_gps() {
+    uint16_t gps_screen_x;
+    uint16_t gps_screen_y;
+    if ( get_gps_screen_x_y(&gps_screen_x, &gps_screen_y) ) {
+        // Redraw the map on top of the current cursor position
+        lcd_image_draw(&map_tiles[current_map_num], &tft,
+            gps_map_x - dot_radius,
+            gps_map_y - dot_radius,
+            gps_screen_x - dot_radius,
+            gps_screen_y - dot_radius,
+            2 * dot_radius + 1,
+            2 * dot_radius + 1);
         }
     }
 

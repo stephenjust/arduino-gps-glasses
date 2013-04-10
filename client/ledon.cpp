@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+#include "ledon.h"
+
 void map_to_glasses(int heading) {
     
     // Replace these with accessors to a global pin variables.
@@ -15,14 +17,12 @@ void map_to_glasses(int heading) {
     pinMode(a2, OUTPUT);
     
     
-    int i; //i is the led number to enable.
-    
-    i = map(heading, 0, 360, 0, 7);
+    int i = (heading/45) % 8; //i is the led number to enable.
     
     //Make i a bitfield 
-    if (i & 0x1) { v[0] = 1;} else {v[0] = 0;}
-    if (i & 0x2) { v[1] = 1;} else {v[1] = 0;}
-    if (i & 0x4) { v[2] = 1;} else {v[2] = 0;}
+    v[0] = (i & 0x1);
+    v[1] = (i & 0x2);
+    v[2] = (i & 0x4);
     if (v[0]) 
         digitalWrite(a0, HIGH);
     else

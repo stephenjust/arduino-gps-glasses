@@ -6,14 +6,15 @@
 
 #include "TimerThree.h"
 #include "Sensors.h"
-#include "Config.h"
 #include "TinyGPS.h"
 #include "GTPA010.h"
 #include "LSM303.h"
 
+#include "joystick.h"
 #include "map.h"
 #include "path.h"
 #include "serial_handling.h"
+#include "ledon.h"
 
 // #define DEBUG_SCROLLING
 // #define DEBUG_PATH
@@ -22,25 +23,11 @@
 TinyGPS gps;
 LSM303 compass;
 
-// Pins and interrupt lines for the zoom in and out buttons.
-const uint8_t zoom_in_interrupt = 1;     // Digital pin 3.
-const uint8_t zoom_in_pin = 3;
-
-const uint8_t zoom_out_interrupt = 0;    // Digital pin 2.
-const uint8_t zoom_out_pin = 2;
-
 // the pins used to connect to the AdaFruit display
 const uint8_t sd_cs = 5;
 const uint8_t tft_cs = 6;
 const uint8_t tft_dc = 7;
 const uint8_t tft_rst = 8;    
-
-// Arduino analog input pin for the horizontal on the joystick.
-const uint8_t joy_pin_x = 0;
-// Arduino analog input pin for the vertical on the joystick.
-const uint8_t joy_pin_y = 1;
-// Digital pin for the joystick button on the Arduino.
-const uint8_t joy_pin_button = 4;
 
 // forward function declarations
 void initialize_sd_card();
@@ -73,29 +60,28 @@ void setup() {
 
     GTPA010::begin();
     Serial.println("GPS initialized!");
-    
-    //Get the GPS data
-    gpsData* gdata;
-    GTPA010::fakeData();
-    gdata = GTPA010::getData();
-    
-    //Print onto Serial Monitor for debugging
-    Serial.println("GPS Data for debugging");
-    Serial.println(gdata->lat);
-    Serial.println(gdata->lon);
 
     compass.init(LSM303DLH_DEVICE);
     compass.enableDefault();
-    compass.setMagGain(LSM303::magGain_40);
+    compass.setMagGain(LSM303::magGain_47);
     Serial.println("Compass initialized!");
 
     compass.read();
+#ifdef DEBUG
     if (!compass.timeoutOccurred()) {
         Serial.print("Compass heading: ");
         Serial.println(compass.heading());
     } else {
         Serial.println("Timed out!"); 
     }
+#endif
+
+#ifdef GLASSES_DEBUG
+    while (1) {
+        compass.reaqd();
+        map_to_glasses(compass.heading());
+    }
+#endif
 
     initialize_screen();
 
@@ -118,24 +104,13 @@ void setup() {
     // Draw the initial screen and cursor
     first_time = 1;
 
-    // Now initialize and enable the zoom buttons.
-    pinMode(zoom_out_pin, INPUT);    // Zoom out.
-    digitalWrite(zoom_out_pin, HIGH);
-
-    pinMode(zoom_in_pin, INPUT);    // Zoom in.
-    digitalWrite(zoom_in_pin, HIGH);
-
-    // Initialize interrupt routines attached to zoom buttons.
-    attachInterrupt(zoom_in_interrupt, handle_zoom_in, FALLING);
-    attachInterrupt(zoom_out_interrupt, handle_zoom_out, FALLING);
-
 #ifdef DEBUG_MEMORY
     Serial.print("Available mem:");
     Serial.println(AVAIL_MEM);
 #endif
 }
 
-const uint16_t screen_scroll_delta = 32;
+const uint16_t screen_scroll_delta = 64;
 const uint16_t screen_left_margin = 10;
 const uint16_t screen_right_margin = 117;
 const uint16_t screen_top_margin = 10;
@@ -148,9 +123,34 @@ int32_t start_lon;
 int32_t stop_lat;
 int32_t stop_lon;
 
+uint32_t g_lat;
+uint32_t g_lon;
+
 // the most recent path to display, length = 0 means no path
 uint16_t path_length = 0;
 coord_t *path;
+
+
+char * prev_loc_msg = 0;
+/**
+ * Print the current GPS position to the LCD
+ */
+void pos_msg(char * msg) {
+    if (prev_loc_msg != msg) {
+        prev_loc_msg = msg;
+        
+        // Draw background
+        tft.fillRect(0, 136, 128, 12, WHITE);
+        
+        // Set text options
+        tft.setTextSize(1);
+        tft.setTextColor(BLACK);
+        tft.setCursor(0, 138);
+
+        // Draw text
+        tft.println(msg);
+    }
+}
 
 void loop() {
 
@@ -187,8 +187,7 @@ void loop() {
         set_zoom();
 
         // center the display window around the cursor 
-        move_window_to(
-                       cursor_map_x - display_window_width/2, 
+        move_window_to(cursor_map_x - display_window_width/2, 
                        cursor_map_y - display_window_height/2);
 
 #ifdef DEBUG_SCROLLING
@@ -287,15 +286,17 @@ void loop() {
         // if the stop point, then we send out the server request and wait.
         if ( request_state == 0 ) {
             // collect the start point
-            start_lat = cursor_lat;
-            start_lon = cursor_lon;
-            request_state = 1;
-        }
-        else if ( request_state == 1) {
-            // collect the stop point
+
+            gpsData * gdata;
+            GTPA010::readData();
+            gdata = GTPA010::getData();
+            g_lat = gdata->lat;
+            g_lon = gdata->lon;
+
+            start_lat = g_lat;
+            start_lon = g_lon;
             stop_lat = cursor_lat;
             stop_lon = cursor_lon;
-            request_state = 0;
 
             // send out the start and stop coordinates to the server
             Serial.print(start_lat);
@@ -366,14 +367,20 @@ void loop() {
     draw_compass();
     // Refresh gps dot
     draw_gps_dot();
+#if FAKE_GPS_DATA
+    char * pos_str = "USING FAKE DATA";
+#else
+    if (GTPA010::gpsLock)
+        char * pos_str = "USING GPS COORDS";
+    else
+        char * pos_str = "SEARCHING SATELLITES";
+#endif
+    pos_msg(pos_str);
 
     // always update the status message area if message changes
     // Indicate which point we are waiting for
     if ( request_state == 0 ) {
-        status_msg("FROM?");
-    }
-    else {
-        status_msg("TO?");
+        status_msg("DESTINATION?");
     }
 }
 
@@ -400,7 +407,6 @@ void status_msg(char *msg) {
         tft.println(msg);
     }
 }
-
 
 void initialize_screen() {
 
@@ -436,136 +442,4 @@ void initialize_sd_card() {
     }
 }
 
-
-// Center point of the joystick - analog reads from the Arduino.
-int16_t joy_center_x = 512;
-int16_t joy_center_y = 512;
-
-void initialize_joystick() {
-    // Initialize the button pin, turn on pullup resistor
-    pinMode(joy_pin_button, INPUT);
-    digitalWrite(joy_pin_button, HIGH);
-
-    // Center Joystick
-    joy_center_x = analogRead(joy_pin_x);
-    joy_center_y = analogRead(joy_pin_y);
-}
-
-
-// button state: 0 not pressed, 1 pressed
-uint8_t prev_button_state = 0;
-
-// time of last sampling of button state
-uint32_t button_prev_time = 0;
-
-// only after this much time has passed is the state sampled.
-uint32_t button_sample_delay = 200;
-
-/*
-  Read the joystick position, and return the x, y displacement from the zero
-  position.  The joystick has to be at least 4 units away from zero before a
-  non-zero displacement is returned.  This filters out the centering errors that
-  occur when the joystick is released.
-
-  Also, return 1 if the joystick button has been pushed, held for a minimum
-  amount of time, and then released.  That is, a 1 is returned if a button
-  select action has occurred.  
-
-*/
-uint8_t process_joystick(int16_t *dx, int16_t *dy) {
-    int16_t joy_x;
-    int16_t joy_y;
-    uint8_t button_state;
-
-    joy_x = -(analogRead(joy_pin_y) - joy_center_x);
-    joy_y = -(analogRead(joy_pin_x) - joy_center_y);
-
-    if (abs(joy_x) <= 4) {
-        joy_x = 0;
-    }
-
-    if (abs(joy_y) <= 4) {
-        joy_y = 0;
-    }
-
-    *dx = joy_x / 128;
-    *dy = joy_y / 128;
-
-    // first, don't even sample unless enough time has passed
-    uint8_t have_sample = 0;
-    uint32_t cur_time = millis();
-    if ( cur_time < button_prev_time ) {
-        // time inversion caused by wraparound, so reset
-        button_prev_time = cur_time;
-    }
-    if ( button_prev_time == 0 || 
-         button_prev_time + button_sample_delay < cur_time ) {
-        // button pushed after suitable delay, so ok to return state
-        button_prev_time = cur_time;
-        have_sample = 1;
-        button_state = LOW == digitalRead(joy_pin_button);
-    }
-
-    // if no sample, return no press result
-    if ( ! have_sample ) { return 0; }
-
-    // if prev and current state are same, no transition occurs
-    if ( prev_button_state == button_state ) { return 0; }
-
-    // are we waiting for push or release?
-    if ( prev_button_state ) {
-        // we got a release, return the press event
-        prev_button_state = button_state;
-        return 1;
-    }
-
-    // we got a press, so change state to waiting for release, but
-    // don't signal the press event yet.
-    prev_button_state = button_state;
-    return 0;
-}
-
-
-// Zooming in and out button handlers
-
-extern volatile uint8_t shared_new_map_num;
-
-/*
-  n mS debounce delay - ignore any further interrupts until this interval has
-  passed.    Although this works in isolations, you should not be hammering on an
-  interrupt line like this, so also make sure that there is debouncing on the
-  switches as per the course notes.
-*/
-
-const uint32_t bounce_delay = 500;
-
-volatile uint32_t in_prev_intr_time = 0;
-void handle_zoom_in() {
-    uint32_t cur_intr_time = millis();
-    if ( cur_intr_time < in_prev_intr_time ) {
-        // time inversion caused by wraparound, so reset
-        in_prev_intr_time = cur_intr_time;
-    }
-    if ( in_prev_intr_time == 0 || 
-         in_prev_intr_time + bounce_delay < cur_intr_time ) {
-
-        zoom_in();
-        in_prev_intr_time = cur_intr_time;
-    }
-}
-
-volatile uint32_t out_prev_intr_time = 0;
-void handle_zoom_out() {
-    uint32_t cur_intr_time = millis();
-    if ( cur_intr_time < out_prev_intr_time ) {
-        // time inversion caused by wraparound, so reset
-        out_prev_intr_time = cur_intr_time;
-    }
-    if ( out_prev_intr_time == 0 || 
-         out_prev_intr_time + bounce_delay < cur_intr_time ) {
-
-        zoom_out();
-        out_prev_intr_time = cur_intr_time;
-    }
-}
 
