@@ -152,6 +152,91 @@ void pos_msg(char * msg) {
     }
 }
 
+/**
+ * Redraw the screen
+ */
+void refresh_display() {
+#ifdef DEBUG_SCROLLING
+    Serial.println("Screen update");
+    Serial.print(current_map_num);
+    Serial.print(" ");
+    Serial.print(cursor_lon);
+    Serial.print(" ");
+    Serial.print(cursor_lat);
+    Serial.println();
+#endif
+
+    draw_map_screen();
+    draw_cursor();
+
+    // Need to redraw any other things that are on the screen
+    if ( path_length > 0 ) {
+        draw_path(path_length, path);
+    }
+
+    // force a redisplay of status message
+    clear_status_msg();
+    draw_compass();
+    draw_gps_dot();
+
+    char * pos_str = 0;
+#if FAKE_GPS_DATA
+    pos_str = "USING FAKE DATA";
+#else
+    if (GTPA010::gpsLock)
+        pos_str = "USING GPS COORDS";
+    else
+        pos_str = "SEARCHING SATELLITES";
+#endif
+    pos_msg("");
+    pos_msg(pos_str);
+}
+
+/**
+ * Send a path request to the server and wait for a response
+ */
+void query_path(int32_t s_lat, int32_t s_lon, int32_t e_lat, int32_t e_lon) {
+
+    // send out the start and stop coordinates to the server
+    Serial.print(s_lat);
+    Serial.print(" "); 
+    Serial.print(s_lon);
+    Serial.print(" "); 
+    Serial.print(e_lat);
+    Serial.print(" "); 
+    Serial.print(e_lon);
+    Serial.println();
+
+    // free any existing path
+    if ( path_length > 0 ) {
+        free(path);
+    }
+
+    // read the path from the serial port
+    status_msg("WAITING");
+    if ( read_path(&path_length, &path) ) {
+#ifdef DEBUG_PATH
+        uint8_t is_visible;
+        for (uint16_t i=0; i < path_length; i++) {
+            is_visible = is_coord_visible(path[i]);
+            Serial.print(i);
+            Serial.print(": ");
+            Serial.print(path[i].lat);
+            Serial.print(",");
+            Serial.print(path[i].lon);
+            Serial.print(is_visible ? "V": "");
+            Serial.println();
+        }
+#endif
+    } else {
+        // should display this error on the screen
+        pos_msg("Path error!");
+    }
+    refresh_display();
+}
+
+        int path_time = 0;
+
 void loop() {
 
     // Make sure we don't update the map tile on screen when we don't need to!
@@ -177,45 +262,7 @@ void loop() {
         map_to_glasses(0);
     }
 
-    // If the map has been zoomed in or out we need to do a redraw,
-    // and will center the display window about the cursor.
-    // So a zoom in-out will re-center over a mis-positioned cursor!
-    
-    // if the map changed as a result of a zoom button press
-    if (shared_new_map_num != current_map_num) {
-#ifdef DEBUG_SCROLLING
-        Serial.print("Zoom from ");
-        Serial.print(current_map_num);
-        Serial.print(" x ");
-        Serial.print(cursor_map_x);
-        Serial.print(" y ");
-        Serial.print(cursor_map_y);
-#endif
-
-        // change the map and figure out the position of the cursor on
-        // the new map.
-        set_zoom();
-
-        // center the display window around the cursor 
-        move_window_to(cursor_map_x - display_window_width/2, 
-                       cursor_map_y - display_window_height/2);
-
-#ifdef DEBUG_SCROLLING
-        Serial.print(" to ");
-        Serial.print(current_map_num);
-        Serial.print(" x ");
-        Serial.print(cursor_map_x);
-        Serial.print(" y ");
-        Serial.print(cursor_map_y);
-        Serial.println();
-#endif
-
-        // Changed the zoom level, so we want to redraw the window
-        update_display_window = 1;
-    }
-
-
-    // Now, see if the joystick has moved, in which case we want to
+    // See if the joystick has moved, in which case we want to
     // also want to move the visible cursor on the screen.
 
     // Process joystick input.
@@ -293,99 +340,44 @@ void loop() {
         // server.  While this is happening, the client user interface is
         // suspended.
 
-        // if the stop point, then we send out the server request and wait.
-        if ( request_state == 0 ) {
-            // collect the start point
+        gpsData * gdata;
+        GTPA010::readData();
+        gdata = GTPA010::getData();
+        g_lat = gdata->lat;
+        g_lon = gdata->lon;
 
-            gpsData * gdata;
-            GTPA010::readData();
-            gdata = GTPA010::getData();
-            g_lat = gdata->lat;
-            g_lon = gdata->lon;
+        start_lat = g_lat;
+        start_lon = g_lon;
+        stop_lat = cursor_lat;
+        stop_lon = cursor_lon;
 
-            start_lat = g_lat;
-            start_lon = g_lon;
-            stop_lat = cursor_lat;
-            stop_lon = cursor_lon;
 
-            // send out the start and stop coordinates to the server
-            Serial.print(start_lat);
-            Serial.print(" "); 
-            Serial.print(start_lon);
-            Serial.print(" "); 
-            Serial.print(stop_lat);
-            Serial.print(" "); 
-            Serial.print(stop_lon);
-            Serial.println();
-
-            // free any existing path
-            if ( path_length > 0 ) {
-                free(path);
-            }
-
-            // read the path from the serial port
-            status_msg("WAITING");
-            if ( read_path(&path_length, &path) ) {
-#ifdef DEBUG_PATH
-                uint8_t is_visible;
-                for (uint16_t i=0; i < path_length; i++) {
-                    is_visible = is_coord_visible(path[i]);
-                    Serial.print(i);
-                    Serial.print(": ");
-                    Serial.print(path[i].lat);
-                    Serial.print(",");
-                    Serial.print(path[i].lon);
-                    Serial.print(is_visible ? "V": "");
-                    Serial.println();
-                }
-#endif
-                update_display_window = 1;
-            }
-            else {
-                // should display this error on the screen
-                Serial.print("Path read error, code ");
-                Serial.println(path_errno);
-            }
-
-        }
+        query_path(start_lat, start_lon, stop_lat, stop_lon);
+        path_time = Sensors::getTime();
     } // end of select_button_event processing
 
     // do we have to redraw the map tile?  
     if (update_display_window) {
-#ifdef DEBUG_SCROLLING
-        Serial.println("Screen update");
-        Serial.print(current_map_num);
-        Serial.print(" ");
-        Serial.print(cursor_lon);
-        Serial.print(" ");
-        Serial.print(cursor_lat);
-        Serial.println();
-#endif
-
-        draw_map_screen();
-        draw_cursor();
-
-        // Need to redraw any other things that are on the screen
-        if ( path_length > 0 ) {
-            draw_path(path_length, path);
-        }
-
-        // force a redisplay of status message
-        clear_status_msg();
+        refresh_display();
     }
+
+    // Spam the server for a new path
+    if (path_length > 0 && Sensors::getTime() - path_time >= 5) {
+        gpsData * gData = GTPA010::getData();
+        // If we've moved, request a new path
+        if (abs(gData->lat - start_lat) > 5 || abs(gData->lon - start_lon) > 5) {
+            start_lat = gData->lat;
+            start_lon = gData->lon;
+
+            query_path(start_lat, start_lon, stop_lat, stop_lon);
+        }
+        path_time = Sensors::getTime();
+    }
+
     // Refresh compass display
     draw_compass();
     // Refresh gps dot
     draw_gps_dot();
-#if FAKE_GPS_DATA
-    char * pos_str = "USING FAKE DATA";
-#else
-    if (GTPA010::gpsLock)
-        char * pos_str = "USING GPS COORDS";
-    else
-        char * pos_str = "SEARCHING SATELLITES";
-#endif
-    pos_msg(pos_str);
 
     // always update the status message area if message changes
     // Indicate which point we are waiting for

@@ -198,4 +198,4 @@ int32_t fd_lat [] = {
 5352499,
 5352504};
 
-int fd_len = 99;
+int fd_len = 98;
