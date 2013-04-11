@@ -206,9 +206,8 @@ uint8_t set_zoom() {
         
 
 void draw_compass() {
-
   compass.read();
-  int compass_dir = compass.heading()+90;
+  int compass_dir = compass.heading() + 90;
 
   // Avoid updating 
   if (abs(compass_dir - compass_old) < 5 && compass_drawn == 1)
@@ -334,8 +333,8 @@ uint8_t is_cursor_visible() {
 uint8_t get_gps_screen_x_y(
     uint16_t *gps_screen_x,uint16_t *gps_screen_y) {
     if ( is_gps_visible ) {
-        *gps_screen_x = gps_map_x - screen_map_x;
-        *gps_screen_y = gps_map_y - screen_map_y;
+        *gps_screen_x = gps_map_x - display_window_width;
+        *gps_screen_y = gps_map_y - display_window_height;
         return 1;
         }
 
@@ -395,6 +394,12 @@ void erase_cursor() {
             2 * dot_radius + 1);
         }
     }
+
+void move_to_gps() {
+    gpsData * gData = GTPA010::getData();
+    move_window(gData->lon - display_window_width/2,
+                gData->lat - display_window_height/2);
+}
 
 void move_window(int32_t lon, int32_t lat) {
     // Shift the current window to have lon and lat in top left corner

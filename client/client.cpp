@@ -92,9 +92,7 @@ void setup() {
     initialize_map();
 
     // Want to start viewing window in the center of the map
-    move_window(
-                (map_box[current_map_num].W + map_box[current_map_num].E) / 2,
-                (map_box[current_map_num].N + map_box[current_map_num].S) / 2);
+    move_window(-11353058,5352706);
 
     // with cursor in the middle of the window
     move_cursor_to(
@@ -253,13 +251,11 @@ void loop() {
     uint8_t select_button_event = 0;
 
     // Update glasses heading
-    if (has_path) {
+    if (path_length > 0) {
         //Serial.print("Compass: ");
         //Serial.println(compass.heading());
         compass.read();
-        map_to_glasses((int)(target_dir - compass.heading()-180) % 360);
-    } else {
-        map_to_glasses(0);
+        map_to_glasses((int)(target_dir - compass.heading()) % 360);
     }
 
     // See if the joystick has moved, in which case we want to

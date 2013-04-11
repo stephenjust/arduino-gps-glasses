@@ -113,8 +113,8 @@ uint8_t read_path(uint16_t *length_p, coord_t *path_p[]) {
     if (*length_p >= 2) {
         coord_t s_coord = (*path_p)[0];
         coord_t e_coord = (*path_p)[1];
-        target_dir = (int)(atan2(e_coord.lat-s_coord.lat,
-                                  e_coord.lon-s_coord.lon)*180/PI) % 360;
+        target_dir = (int)(atan2(e_coord.lon-s_coord.lon,
+                                 e_coord.lat-s_coord.lat)*180/PI - 180) % 360;
 #ifdef DEBUG_GLASSES
         map_to_glasses(target_dir);
 #endif
