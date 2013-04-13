@@ -276,23 +276,25 @@ def main():
         debug and print("Routing path from vertex {} to {}".format(start, end))
 
         if end is prev_end:
-            print("In secondary! Woot!")
-            if start is end:
+            # to speed things up, if the user wants to go to the same destination
+            # as last time, find which point in the previous path
+            # the user is close to, and return the shortest distance to
+            # the next point in the previous path
+            min_dist = float('infinity')
+            for i in range(len(path)):
+                print("i is: " + str(i) + " and path[i] is: " + str(path[i]))
+                dist = distance(V_coord[start], V_coord[path[i]])
+                if dist < min_dist:
+                    closest_v = path[i]
+                    min_dist = dist
+                    next_dest = path[i + 1]
+            
+            if closest_v == prev_end:
                 # we're there!
                 prev_end = 0
                 continue
-            # do useful things to speed stuffs up:
-            # if the user is on the correct path, dont recalculate
-            # if the user has deviated, recalculate
-            secondary_end = 0
-            for i in range(len(path)):
-                print("i is: " + str(i) + " and path[i] is: " + str(path[i]))
-                if path[i] == start:
-                    secondary_end = path[i + 1]
-            if secondary_end is 0:
-                print("Secondary is 0..")
-                break
-            secondary_path = least_cost_path(G, start, secondary_end, cost_distance)
+            
+            secondary_path = least_cost_path(G, start, next_dest, cost_distance)
             
             send(serial_out, str(len(secondary_path)))
             print("The secondary path is:")
